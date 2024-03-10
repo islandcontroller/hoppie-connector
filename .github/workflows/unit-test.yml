@@ -2,6 +2,11 @@ name: Perform unit-test and code linting
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - '.gitignore'
+      - 'LICENSE'
+      - 'pyproject.toml'
+      - 'README.md'
   pull_request:
     branches: [ "master" ]
 
