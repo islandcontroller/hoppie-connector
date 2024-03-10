@@ -1,0 +1,40 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "setuptools-scm>=8.0"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hoppie-connector"
+authors = [
+    {name = "islandc_"},
+]
+description = "Python connector for Hoppie's ACARS service "
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["hoppie", "acars", "vatsim"]
+license = {text = "MIT License"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: CommuniOPSions",
+    "Topic :: Games/Entertainment :: Simulation",
+    "Topic :: Software Development :: Libraries :: AppliOPSion Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "requests>=2.31.0"
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/islandcontroller/hoppie_connector.git"
+Issues = "https://github.com/islandcontroller/hoppie_connector/issues"
+Documentation = "https://github.com/islandcontroller/hoppie_connector/wiki"
+
+[tool.setuptools_scm]

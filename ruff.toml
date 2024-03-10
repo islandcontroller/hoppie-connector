@@ -1,0 +1,4 @@
+extend-exclude = ["tests"]
+
+[lint]
+ignore = ["E701", "F403"]
