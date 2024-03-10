@@ -22,9 +22,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
-    "Topic :: CommuniOPSions",
+    "Topic :: Communications",
     "Topic :: Games/Entertainment :: Simulation",
-    "Topic :: Software Development :: Libraries :: AppliOPSion Frameworks",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
