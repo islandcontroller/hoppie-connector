@@ -38,7 +38,7 @@ class HoppieResponseParser(object):
         m = re.match(r'\{(\d+)\s([A-Z0-9]+)\s([a-z\s]+)\s\{([^\}]*)\}\}', content)
         if not m: return None
 
-        id = m.group(1)
+        id = int(m.group(1), base=10)
         from_name = m.group(2)
         type_name = m.group(3)
         packet_content = m.group(4)

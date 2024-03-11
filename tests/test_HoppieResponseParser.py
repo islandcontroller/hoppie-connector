@@ -47,4 +47,40 @@ class TestSuccessResponseParser(unittest.TestCase):
         super().setUp()
         self._UUT = HoppieResponseParser()
 
-    
+    def test_get_code(self):
+        actual: SuccessResponse = self._UUT.parse('ok')
+        self.assertEqual(HoppieResponse.ResponseCode.OK, actual.get_code())
+
+    def test_empty_response(self):
+        actual: SuccessResponse = self._UUT.parse('ok')
+        self.assertListEqual([], actual.get_items())
+
+    def test_malformed_item(self):
+        actual: SuccessResponse = self._UUT.parse('ok {malformed item}')
+        self.assertListEqual([], actual.get_items())
+
+    def test_valid_item(self):
+        expected = [{'id': 1, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_empty_packet(self):
+        expected = [{'id': 1, 'from': 'FROM', 'type': 'type', 'packet': ''}]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_multiple_items(self):
+        expected = [
+            {'id': 1, 'from': 'FROM', 'type': 'type', 'packet': 'packet'},
+            {'id': 2, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {packet}} {2 FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_omit_malformed_items(self):
+        expected = [
+            {'id': 1, 'from': 'FROM', 'type': 'type', 'packet': 'packet'},
+            {'id': 3, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {packet}} {invalid} {3 FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
