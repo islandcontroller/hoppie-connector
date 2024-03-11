@@ -27,7 +27,7 @@ class SuccessResponse(HoppieResponse):
 
 class HoppieResponseParser(object):
     def _parse_error(self, content: str) -> ErrorResponse:
-        m = re.match(r'^\{(.*)\}$', content, flags=re.DOTALL)
+        m = re.search(r'\{(.*)\}', content, flags=re.DOTALL)
         if not m: raise ValueError('Invalid error message format')
         return ErrorResponse(m.group(1))
 
