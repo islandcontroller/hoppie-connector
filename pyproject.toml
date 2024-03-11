@@ -38,3 +38,9 @@ Issues = "https://github.com/islandcontroller/hoppie_connector/issues"
 Documentation = "https://github.com/islandcontroller/hoppie_connector/wiki"
 
 [tool.setuptools_scm]
+
+[tool.ruff]
+extend-exclude = ["tests"]
+
+[tool.ruff.lint]
+ignore = ["E701", "F403"]

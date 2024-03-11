@@ -6,7 +6,6 @@ on:
       - '**.py'
       - '.github/workflows/unit-test.yml'
       - 'pyproject.toml'
-      - 'ruff.toml'
   pull_request:
     branches: [ "master" ]
 
