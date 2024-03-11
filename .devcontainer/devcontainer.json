@@ -20,6 +20,7 @@
 		"vscode": {
 			"extensions": [
 				"charliermarsh.ruff",
+				"github.vscode-github-actions",
 				"njpwerner.autodocstring",
 				"tamasfe.even-better-toml"
 			],
