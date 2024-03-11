@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import ErrorResponse, SuccessResponse, HoppieResponseParser
+from hoppie_connector.Responses import HoppieResponse, ErrorResponse, SuccessResponse, HoppieResponseParser
 import unittest
 
 class TestHoppieResponseParser(unittest.TestCase):
@@ -14,6 +14,10 @@ class TestErrorResponseParser(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._UUT = HoppieResponseParser()
+
+    def test_get_code(self):
+        actual: ErrorResponse = self._UUT.parse('error {}')
+        self.assertEqual(HoppieResponse.ResponseCode.ERROR, actual.get_code())
 
     def test_empty_reason(self):
         actual: ErrorResponse = self._UUT.parse('error {}')

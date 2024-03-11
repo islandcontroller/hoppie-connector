@@ -7,23 +7,26 @@ class HoppieResponse(object):
         ERROR = 'error'
 
     def __init__(self, code: ResponseCode):
-        self.code = code
+        self._code = code
 
     def get_code(self):
-        return self.code
+        return self._code
 
 class ErrorResponse(HoppieResponse):
     def __init__(self, reason: str):
         super().__init__(HoppieResponse.ResponseCode.ERROR)
-        self.reason = reason
+        self._reason = reason
 
     def get_reason(self):
-        return self.reason
+        return self._reason
 
 class SuccessResponse(HoppieResponse):
     def __init__(self, items: list[dict]):
         super().__init__(HoppieResponse.ResponseCode.OK)
-        self.items = items
+        self._items = items
+
+    def get_items(self) -> list[dict]:
+        return self._items
 
 class HoppieResponseParser(object):
     def _parse_error(self, content: str) -> ErrorResponse:

@@ -13,7 +13,7 @@ class HoppieConnector(object):
 
     def _get_data_from_response(self, response: SuccessResponse) -> list[tuple[int, HoppieMessage]]:
         result = []
-        for item_data in response.items:
+        for item_data in response.get_items():
             try:
                 id, msg = self._f.create_from_data(item_data)
                 result.append((id, msg))
