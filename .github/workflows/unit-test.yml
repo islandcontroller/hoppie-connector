@@ -2,11 +2,11 @@ name: Perform unit-test and code linting
 on:
   push:
     branches: [ "master" ]
-    paths-ignore:
-      - '.gitignore'
-      - 'LICENSE'
+    paths:
+      - '**.py'
+      - '.github/workflows/publish-pypi.yml'
       - 'pyproject.toml'
-      - 'README.md'
+      - 'ruff.toml'
   pull_request:
     branches: [ "master" ]
 
