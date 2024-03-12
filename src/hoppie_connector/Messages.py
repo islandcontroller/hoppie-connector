@@ -1,6 +1,6 @@
 import enum
 import re
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, time, UTC
 
 class HoppieMessage(object):
     class MessageType(enum.Enum):
@@ -82,7 +82,7 @@ class ProgressMessage(HoppieMessage):
     def _Is_valid_aprt_icao(cls, input: str) -> bool:
         return bool(re.match(r'^[A-Z]{4}$', input))
 
-    def __init__(self, from_name: str, to_name: str, dep: str, arr: str, time_out: datetime, time_eta: datetime | None = None, time_off: datetime | None = None, time_on: datetime | None = None, time_in: datetime | None = None):
+    def __init__(self, from_name: str, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None):
         if not self._Is_valid_aprt_icao(dep):
             raise ValueError('Invalid departure identifier')
         elif not self._Is_valid_aprt_icao(arr):
@@ -91,16 +91,6 @@ class ProgressMessage(HoppieMessage):
             raise ValueError('Missing OFF time')
         elif time_in and not time_on: 
             raise ValueError('Missing ON time')
-        elif time_off and time_off < time_out:
-            raise ValueError('Invalid OFF before OUT time')
-        elif time_on and time_on < time_off:
-            raise ValueError('Invalid ON before OFF time')
-        elif time_in and time_in < time_on:
-            raise ValueError('Invalid IN before ON time')
-        elif time_eta and time_eta < time_out:
-            raise ValueError('Invalid ETA before OUT time')
-        elif time_eta and time_off and time_eta < time_off:
-            raise ValueError('Invalid ETA before OFF time')
         elif time_eta and time_on:
             raise ValueError('Invalid ETA after arrival specified')
         else:
@@ -119,27 +109,29 @@ class ProgressMessage(HoppieMessage):
     def get_arrival(self) -> str:
         return self._arr
 
-    def get_time_out(self) -> datetime:
+    def get_time_out(self) -> time:
         return self._out
 
-    def get_time_off(self) -> datetime | None:
+    def get_time_off(self) -> time | None:
         return self._off
 
-    def get_time_on(self) -> datetime | None:
+    def get_time_on(self) -> time | None:
         return self._on
 
-    def get_time_in(self) -> datetime | None:
+    def get_time_in(self) -> time | None:
         return self._in
 
-    def get_eta(self) -> datetime | None:
+    def get_eta(self) -> time | None:
         return self._eta
 
     def get_packet_content(self) -> str:
-        packet = f"{self._dep}/{self._arr} OUT/{self._out.astimezone(UTC):%H%M}"
-        if self._off: packet += f" OFF/{self._off.astimezone(UTC):%H%M}"
-        if self._on: packet += f" ON/{self._on.astimezone(UTC):%H%M}"
-        if self._in: packet += f" IN/{self._in.astimezone(UTC):%H%M}"
-        if self._eta: packet += f" ETA/{self._eta.astimezone(UTC):%H%M}"
+        def _get_utc(t: time) -> time: return t - t.utcoffset()
+
+        packet = f"{self._dep}/{self._arr} OUT/{_get_utc(self._out):%H%M}"
+        if self._off: packet += f" OFF/{_get_utc(self._off):%H%M}"
+        if self._on: packet += f" ON/{_get_utc(self._on):%H%M}"
+        if self._in: packet += f" IN/{_get_utc(self._in):%H%M}"
+        if self._eta: packet += f" ETA/{_get_utc(self._eta):%H%M}"
         return packet
 
 class AdscMessage(HoppieMessage):
@@ -214,46 +206,40 @@ class HoppieMessageFactory(object):
             if not m: raise ValueError('Invalid dep/arr value')
             else:     return m.group(1), m.group(2)
 
-        def _get_time(now: datetime, timestr: str) -> datetime:
-            time = datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC)
-            if time.time() > now.time():
-                yest = now + timedelta(days=-1)
-                return time.replace(yest.year, yest.month, yest.day)
-            else:
-                return time.replace(now.year, now.month, now.day)
+        def _get_time(timestr: str) -> time:
+            return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).time()
 
-        def _get_time_out(now: datetime, packet: str) -> datetime | None:
+        def _get_time_out(packet: str) -> time | None:
             m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/(\d{4})Z?', packet)
             if not m: raise ValueError('Invalid OUT value')
-            else:     return _get_time(now, m.group(1))
+            else:     return _get_time(m.group(1))
 
-        def _get_time_off(now: datetime, packet: str) -> datetime | None:
+        def _get_time_off(packet: str) -> time | None:
             m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/(\d{4})Z?', packet)
             if not m: return None
-            else:     return _get_time(now, m.group(1))
+            else:     return _get_time(m.group(1))
 
-        def _get_eta(now: datetime, packet: str) -> datetime | None:
+        def _get_eta(packet: str) -> time | None:
             m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\s(?:OFF\/\d{4}Z?\s)?ETA\/(\d{4})Z?', packet)
             if not m: return None
-            else:     return _get_time(now, m.group(1))
+            else:     return _get_time(m.group(1))
 
-        def _get_time_on(now: datetime, packet: str) -> datetime | None:
+        def _get_time_on(packet: str) -> time | None:
             m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/\d{4}Z?\sON\/(\d{4})Z?', packet)
             if not m: return None
-            else:     return _get_time(now, m.group(1))
+            else:     return _get_time(m.group(1))
 
-        def _get_time_in(now: datetime, packet: str) -> datetime | None:
+        def _get_time_in(packet: str) -> time | None:
             m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/\d{4}Z?\sON\/\d{4}Z?\sIN\/(\d{4})Z?', packet)
             if not m: return None
-            else:     return _get_time(now, m.group(1))
+            else:     return _get_time(m.group(1))
 
-        now = datetime.now()
         dep, arr = _get_aprt(packet)
-        time_out = _get_time_out(now, packet)
-        time_off = _get_time_off(now, packet)
-        time_on = _get_time_on(now, packet)
-        time_in = _get_time_in(now, packet)
-        time_eta = _get_eta(now, packet)
+        time_out = _get_time_out(packet)
+        time_off = _get_time_off(packet)
+        time_on = _get_time_on(packet)
+        time_in = _get_time_in(packet)
+        time_eta = _get_eta(packet)
 
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
