@@ -210,27 +210,27 @@ class HoppieMessageFactory(object):
             return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).time()
 
         def _get_time_out(packet: str) -> time | None:
-            m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/(\d{4})Z?', packet)
+            m = re.search(r'OUT\/(\d{4})Z?', packet)
             if not m: raise ValueError('Invalid OUT value')
             else:     return _get_time(m.group(1))
 
         def _get_time_off(packet: str) -> time | None:
-            m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/(\d{4})Z?', packet)
+            m = re.search(r'OFF\/(\d{4})Z?', packet)
             if not m: return None
             else:     return _get_time(m.group(1))
 
         def _get_eta(packet: str) -> time | None:
-            m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\s(?:OFF\/\d{4}Z?\s)?ETA\/(\d{4})Z?', packet)
+            m = re.search(r'ETA\/(\d{4})Z?', packet)
             if not m: return None
             else:     return _get_time(m.group(1))
 
         def _get_time_on(packet: str) -> time | None:
-            m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/\d{4}Z?\sON\/(\d{4})Z?', packet)
+            m = re.search(r'ON\/(\d{4})Z?', packet)
             if not m: return None
             else:     return _get_time(m.group(1))
 
         def _get_time_in(packet: str) -> time | None:
-            m = re.match(r'^[A-Z]{4}\/[A-Z]{4}\sOUT\/\d{4}Z?\sOFF\/\d{4}Z?\sON\/\d{4}Z?\sIN\/(\d{4})Z?', packet)
+            m = re.search(r'IN\/(\d{4})Z?', packet)
             if not m: return None
             else:     return _get_time(m.group(1))
 
