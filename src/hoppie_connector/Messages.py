@@ -148,7 +148,7 @@ class ProgressMessage(HoppieMessage):
             raise ValueError('Missing OFF time')
         elif time_in and not time_on: 
             raise ValueError('Missing ON time')
-        elif time_eta and time_on:
+        elif time_eta and time_in:
             raise ValueError('Invalid ETA after arrival specified')
         else:
             super().__init__(from_name, to_name, self.MessageType.PROGRESS)

@@ -94,6 +94,19 @@ class TestValidProgressMessageOn(unittest.TestCase):
 
     def test_get_packet_content(self): self.assertEqual(self._EXPECTED_PACKET, self._UUT.get_packet_content())
 
+class TestValidProgressMessageOnEta(unittest.TestCase):
+    _EXPECTED_OUT: time = time(hour=18, minute=20, second=0, tzinfo=UTC)
+    _EXPECTED_OFF: time = time(hour=18, minute=25, tzinfo=UTC)
+    _EXPECTED_ON: time = time(hour=18, minute=30, tzinfo=UTC)
+    _EXPECTED_ETA: time = time(hour=18, minute=35, tzinfo=UTC)
+    _EXPECTED_PACKET: str = 'EDDF/EDDH OUT/1820 OFF/1825 ON/1830 ETA/1835'
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._EXPECTED_OUT, self._EXPECTED_ETA, self._EXPECTED_OFF, self._EXPECTED_ON)
+
+    def test_get_packet_content(self): self.assertEqual(self._EXPECTED_PACKET, self._UUT.get_packet_content())
+
 class TestValidProgressMessageIn(unittest.TestCase):
     _EXPECTED_OUT: time = time(hour=18, minute=20, second=0, tzinfo=UTC)
     _EXPECTED_OFF: time = time(hour=18, minute=25, tzinfo=UTC)
@@ -112,10 +125,11 @@ class TestProgressMessageInputValidation(unittest.TestCase):
     _TIME_2: time = time(hour=18, minute=25, second=0, tzinfo=UTC)
     _TIME_3: time = time(hour=18, minute=30, second=0, tzinfo=UTC)
     _TIME_4: time = time(hour=18, minute=35, second=0, tzinfo=UTC)
+    _TIME_5: time = time(hour=18, minute=40, second=0, tzinfo=UTC)
 
     def test_invalid_dep_code(self):   self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EH02', 'EDDH', self._TIME_1))
     def test_invalid_arr_code(self):   self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'abc',  self._TIME_1))
     def test_missing_out(self):        self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', None))
     def test_missing_off(self):        self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, time_on=self._TIME_2))
     def test_missing_on(self):         self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, time_off=self._TIME_2, time_in=self._TIME_3))
-    def test_eta_after_arrival(self):  self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, self._TIME_4, self._TIME_2, self._TIME_3))
+    def test_eta_after_arrival(self):  self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, self._TIME_5, self._TIME_2, self._TIME_3, self._TIME_4))
