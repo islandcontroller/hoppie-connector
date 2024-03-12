@@ -87,6 +87,8 @@ class ProgressMessage(HoppieMessage):
             raise ValueError('Invalid departure identifier')
         elif not self._Is_valid_aprt_icao(arr):
             raise ValueError('Invalid arrival identifier')
+        elif not time_out:
+            raise ValueError('Missing OUT time')
         elif time_on and not time_off:
             raise ValueError('Missing OFF time')
         elif time_in and not time_on: 
@@ -125,7 +127,13 @@ class ProgressMessage(HoppieMessage):
         return self._eta
 
     def get_packet_content(self) -> str:
-        def _get_utc(t: time) -> time: return t - t.utcoffset()
+        def _get_utc(t: time) -> time: 
+            offset = t.utcoffset()
+            if not offset:
+                return t
+            else:
+                adjusted = datetime.combine(datetime.today(), t) - offset
+                return adjusted.time()
 
         packet = f"{self._dep}/{self._arr} OUT/{_get_utc(self._out):%H%M}"
         if self._off: packet += f" OFF/{_get_utc(self._off):%H%M}"
@@ -207,7 +215,7 @@ class HoppieMessageFactory(object):
             else:     return m.group(1), m.group(2)
 
         def _get_time(timestr: str) -> time:
-            return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).time()
+            return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).timetz()
 
         def _get_time_out(packet: str) -> time | None:
             m = re.search(r'OUT\/(\d{4})Z?', packet)

@@ -84,32 +84,32 @@ class TestProgressMessageFactoryFromData(unittest.TestCase):
 
     def test_time_out(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_time_out())
 
     def test_time_out_eta(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 ETA/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_eta())
 
     def test_time_off(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_time_off())
 
     def test_time_off_eta(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ETA/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_eta())
 
     def test_time_on(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_time_on())
 
     def test_time_in(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/0002 IN/1820'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_time_in())
 
     def test_missing_out(self):
@@ -129,7 +129,7 @@ class TestProgressMessageFactoryFromData(unittest.TestCase):
 
     def test_special_empty_case(self):
         actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820 OFF/----- ON/----- ETA/-----'})
-        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).time()
+        expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
         self.assertEqual(expected, actual[1].get_time_out())
         self.assertIsNone(actual[1].get_time_off())
         self.assertIsNone(actual[1].get_time_on())
