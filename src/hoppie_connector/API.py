@@ -3,7 +3,7 @@ from .Responses import HoppieResponse, HoppieResponseParser
 import requests
 
 class HoppieAPI(object):
-    def __init__(self, logon: str, url: str = 'http://www.hoppie.nl/acars/system/connect.html'):
+    def __init__(self, logon: str, url: str = 'https://www.hoppie.nl/acars/system/connect.html'):
         self._url = url
         self._logon = logon
 
