@@ -85,6 +85,11 @@ class TestSuccessPeekResponseParser(unittest.TestCase):
         actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {packet}} {invalid} {3 FROM type {packet}}')
         self.assertListEqual(expected, actual.get_items())
 
+    def test_space_in_type_name(self):
+        expected = [{'id': 1, 'from': 'FROM', 'type': 'type name', 'packet': ''}]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM type name {}}')
+        self.assertListEqual(expected, actual.get_items())
+
 class TestSuccessPollResponseParser(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -114,4 +119,9 @@ class TestSuccessPollResponseParser(unittest.TestCase):
             {'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
         ]
         actual: SuccessResponse = self._UUT.parse('ok {FROM type {packet}} {invalid} {FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_space_in_type_name(self):
+        expected = [{'id': None, 'from': 'FROM', 'type': 'type name', 'packet': ''}]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM type name {}}')
         self.assertListEqual(expected, actual.get_items())
