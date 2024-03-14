@@ -24,7 +24,7 @@ class HoppieConnector(object):
         self._f = HoppieMessageFactory(station_name)
         self._api = HoppieAPI(logon)
 
-    def _get_data_from_response(self, response: SuccessResponse) -> list[tuple[int, HoppieMessage]]:
+    def _get_data_from_response(self, response: SuccessResponse) -> list[tuple[int | None, HoppieMessage]]:
         result = []
         for item_data in response.get_items():
             try:
@@ -34,7 +34,7 @@ class HoppieConnector(object):
                 warnings.warn(f"Unable to parse {item_data}: {e}", HoppieWarning)
         return result
 
-    def _connect(self, message: HoppieMessage) -> list[tuple[int, HoppieMessage]]:
+    def _connect(self, message: HoppieMessage) -> list[tuple[int | None, HoppieMessage]]:
         response = self._api.connect(message)
 
         if isinstance(response, ErrorResponse): 
@@ -44,7 +44,7 @@ class HoppieConnector(object):
         else:
             raise NotImplementedError()
 
-    def peek(self) -> list[tuple[int, HoppieMessage]]:
+    def peek(self) -> list[tuple[int | None, HoppieMessage]]:
         """Peek all messages destined to own station
 
         Note:
@@ -53,11 +53,11 @@ class HoppieConnector(object):
             to 24 hours.
 
         Returns:
-            list[tuple[int, HoppieMessage]]: List of messages (id, content)
+            list[tuple[int | None, HoppieMessage]]: List of messages (id, content)
         """
         return self._connect(self._f.create_peek())
 
-    def poll(self) -> list[tuple[int, HoppieMessage]]:
+    def poll(self) -> list[tuple[int | None, HoppieMessage]]:
         """Poll for new messages destined to own station and mark them as relayed.
 
         Note:
@@ -65,8 +65,12 @@ class HoppieConnector(object):
             received messages as 'relayed'. Previously relayed messages will 
             not reappear in the next `poll` response.
 
+        Note:
+            Poll responses do not contain message IDs. Hence, the ID will always
+            be `None`.
+
         Returns:
-            list[tuple[int, HoppieMessage]]: List of messages (id, content)
+            list[tuple[int | None, HoppieMessage]]: List of messages (id, content)
         """
         return self._connect(self._f.create_poll())
     
