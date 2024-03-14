@@ -12,7 +12,7 @@ class HoppieAPI(object):
 
         Args:
             logon (str): Logon code
-            url (str, optional): API URL. Defaults to 'https://www.hoppie.nl/acars/system/connect.html'.
+            url (str, optional): API URL. Defaults to `https://www.hoppie.nl/acars/system/connect.html`.
         """
         self._url = url
         self._logon = logon
@@ -26,11 +26,8 @@ class HoppieAPI(object):
         Returns:
             HoppieResponse: Response data (ASCII string encoding)
         """
-        params = { 'logon': self._logon }
-        params.update(msg.get_msg_params())
-
-        req = requests.get(self._url, params)
-        if not req.ok: raise ConnectionError(f"Error {req.status_code}: {req.reason}")
-
-        response = req.content.decode('ascii')
-        return HoppieResponseParser().parse(response)
+        response = requests.get(self._url, params={'logon': self._logon, **msg.get_msg_params()})
+        if not response.ok: raise ConnectionError(f"Error {response.status_code}: {response.reason}")
+        
+        content = response.content.decode('ascii')
+        return HoppieResponseParser().parse(content)
