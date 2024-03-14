@@ -2,33 +2,70 @@ import enum
 import re
 
 class HoppieResponse(object):
+    """HoppieResponse(code)
+    
+    Base response data object.
+    """
     class ResponseCode(enum.Enum):
         OK = 'ok'
         ERROR = 'error'
 
     def __init__(self, code: ResponseCode):
+        """Create a new base response object
+
+        Args:
+            code (ResponseCode): Response type code
+        """
         self._code = code
 
     def get_code(self):
+        """Return response type code
+        """
         return self._code
 
 class ErrorResponse(HoppieResponse):
+    """ErrorResponse(reason)
+
+    Error indication issued by the Hoppie API server.
+    """
     def __init__(self, reason: str):
+        """Create error response
+
+        Args:
+            reason (str): Reason text
+        """
         super().__init__(HoppieResponse.ResponseCode.ERROR)
         self._reason = reason
 
     def get_reason(self):
+        """Return reason text
+        """
         return self._reason
 
 class SuccessResponse(HoppieResponse):
+    """SuccessResponse(items)
+    
+    Success indication issued by the Hoppie API server.
+    """
     def __init__(self, items: list[dict]):
+        """Create success response
+
+        Args:
+            items (list[dict]): Response data
+        """
         super().__init__(HoppieResponse.ResponseCode.OK)
         self._items = items
 
     def get_items(self) -> list[dict]:
+        """Return response data items
+        """
         return self._items
 
 class HoppieResponseParser(object):
+    """HoppieResponseParser()
+    
+    Parser of Hoppie's custom-format data items, encoded in plain text
+    """
     def _parse_error(self, content: str) -> ErrorResponse:
         m = re.search(r'\{(.*)\}', content, flags=re.DOTALL)
         if not m: raise ValueError('Invalid error message format')
@@ -56,6 +93,14 @@ class HoppieResponseParser(object):
         return SuccessResponse(items)
 
     def parse(self, response: str) -> HoppieResponse:
+        """Parse response from API response text
+
+        Args:
+            response (str): Response text
+
+        Returns:
+            HoppieResponse: Parsed response
+        """
         m = re.match(r'^(ok|error)\s?(.*)$', response, flags=re.DOTALL)
         if not m: raise ValueError('Invalid response format')
         

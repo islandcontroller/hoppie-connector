@@ -77,11 +77,29 @@ class HoppieMessage(object):
         return self.__str__()
 
 class PeekMessage(HoppieMessage): 
+    """PeekMessage()
+    
+    Retrieve messages without appearing online or marking them as relayed.
+    """
     def __init__(self, from_name: str):
+        """Create "peek"-message
+
+        Args:
+            from_name (str): Sender station name
+        """
         super().__init__(from_name, 'SERVER', self.MessageType.PEEK)
 
 class PollMessage(HoppieMessage):
+    """PollMessage()
+    
+    Retrieve unread messages and mark station as 'online'.
+    """
     def __init__(self, from_name: str):
+        """Create "poll"-message
+
+        Args:
+            from_name (str): Sender station name
+        """
         super().__init__(from_name, 'SERVER', self.MessageType.POLL)
 
 class TelexMessage(HoppieMessage):
@@ -217,6 +235,17 @@ class AdscMessage(HoppieMessage):
     ADC-C Position Report
     """
     def __init__(self, from_name: str, to_name: str, report_time: datetime, position: tuple[float, float], altitude: float, heading: float | None = None, remark: str | None = None):
+        """Create ADS-C position report
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            report_time (datetime): Date and time of report
+            position (tuple[float, float]): Position (lat, lon)
+            altitude (float): Altitude in feet
+            heading (float | None, optional): Heading in degrees. Defaults to None.
+            remark (str | None, optional): Remark text. Defaults to None.
+        """
         if position[0] < -90.0 or position[0] > 90.0:
             raise ValueError('Latitude out of range')
         elif position[1] < -180.0 or position[1] > 180.0:
@@ -288,6 +317,10 @@ class AdscMessage(HoppieMessage):
         return packet
 
 class HoppieMessageFactory(object):
+    """HoppieMessageFactory(station)
+    
+    Factory class for creating `HoppieMessage` objects from data or user input
+    """
     def __init__(self, station: str):
         self._station = station
 
@@ -338,6 +371,11 @@ class HoppieMessageFactory(object):
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
     def create_from_data(self, data: dict) -> tuple[int, HoppieMessage]:
+        """Create `HoppieMessage` object from API response data
+
+        Args:
+            data (dict): API response data
+        """
         id = data['id']
         from_name = data['from']
         type_name = data['type']
@@ -351,10 +389,20 @@ class HoppieMessageFactory(object):
         return id, msg
 
     def create_peek(self) -> PeekMessage:
+        """Create a "peek"-message
+        """
         return PeekMessage(self._station)
 
     def create_poll(self) -> PollMessage:
+        """Create "poll"-message
+        """
         return PollMessage(self._station)
 
     def create_telex(self, to_name: str, message: str) -> TelexMessage:
+        """Create freetext message from user input
+
+        Args:
+            to_name (str): Recipient station name
+            message (str): Message content
+        """
         return TelexMessage(self._station, to_name, message)
