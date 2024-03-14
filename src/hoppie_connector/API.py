@@ -26,7 +26,13 @@ class HoppieAPI(object):
         Returns:
             HoppieResponse: Response data (ASCII string encoding)
         """
-        response = requests.get(self._url, params={'logon': self._logon, **msg.get_msg_params()})
+        match msg.get_msg_type():
+            case HoppieMessage.MessageType.TELEX:
+                params = msg.get_msg_params()
+                data = params.pop('packet')
+                response = requests.post(self._url, params={'logon': self._logon, **params}, data={'packet': data})
+            case _:
+                response = requests.get(self._url, params={'logon': self._logon, **msg.get_msg_params()})
         if not response.ok: raise ConnectionError(f"Error {response.status_code}: {response.reason}")
         
         content = response.content.decode('ascii')
