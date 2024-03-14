@@ -15,7 +15,7 @@ class HoppieMessage(object):
         PEEK = 'peek'
 
     def _is_valid_station_name(self, name: str) -> bool:
-        return name == 'ALL-CALLSIGNS' or re.match(r'^[A-Z0-9]{3,8}$', name)
+        return bool(re.match(r'^[A-Z0-9]{3,8}$', name))
 
     def __init__(self, from_name: str, to_name: str, type: MessageType):
         """Create base message object
@@ -33,7 +33,7 @@ class HoppieMessage(object):
             raise ValueError('Invalid message type')
         elif not self._is_valid_station_name(from_name):
             raise ValueError('Invalid FROM station name')
-        elif not self._is_valid_station_name(to_name):
+        elif not self._is_valid_station_name(to_name) and not to_name == 'ALL-CALLSIGNS':
             raise ValueError('Invalid TO station name')
         else:
             self._from = from_name

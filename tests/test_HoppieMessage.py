@@ -31,5 +31,5 @@ class TestHoppieMessageInputValidation(unittest.TestCase):
     def test_invalid_from_char(self): self.assertRaises(ValueError, lambda: HoppieMessage('D-ABCD',    'OPS',       HoppieMessage.MessageType.TELEX))
     def test_invalid_to_char(self):   self.assertRaises(ValueError, lambda: HoppieMessage('CALLSIGN',  'ops',       HoppieMessage.MessageType.TELEX))
     def test_invalid_type(self):      self.assertRaises(ValueError, lambda: HoppieMessage('CALLSIGN',  'OPS',       0))
-    def test_special_from_all(self):  self.assertIsInstance(HoppieMessage('ALL-CALLSIGNS', 'OPS', HoppieMessage.MessageType.TELEX), HoppieMessage)
+    def test_invalid_from_all(self):  self.assertRaises(ValueError, lambda: HoppieMessage('ALL-CALLSIGNS', 'OPS',   HoppieMessage.MessageType.TELEX))
     def test_special_to_all(self):    self.assertIsInstance(HoppieMessage('OPS', 'ALL-CALLSIGNS', HoppieMessage.MessageType.TELEX), HoppieMessage)
