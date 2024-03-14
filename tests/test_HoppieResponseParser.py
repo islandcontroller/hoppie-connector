@@ -42,7 +42,7 @@ class TestErrorResponseParser(unittest.TestCase):
         actual: ErrorResponse = self._UUT.parse('error {reason} garbage')
         self.assertEqual('reason', actual.get_reason())
 
-class TestSuccessResponseParser(unittest.TestCase):
+class TestSuccessPeekResponseParser(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._UUT = HoppieResponseParser()
@@ -83,4 +83,35 @@ class TestSuccessResponseParser(unittest.TestCase):
             {'id': 3, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
         ]
         actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {packet}} {invalid} {3 FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+class TestSuccessPollResponseParser(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieResponseParser()
+
+    def test_valid_item(self):
+        expected = [{'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_empty_packet(self):
+        expected = [{'id': None, 'from': 'FROM', 'type': 'type', 'packet': ''}]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM type {}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_multiple_items(self):
+        expected = [
+            {'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'},
+            {'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM type {packet}} {FROM type {packet}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_omit_malformed_items(self):
+        expected = [
+            {'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'},
+            {'id': None, 'from': 'FROM', 'type': 'type', 'packet': 'packet'}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM type {packet}} {invalid} {FROM type {packet}}')
         self.assertListEqual(expected, actual.get_items())
