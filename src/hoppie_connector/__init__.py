@@ -11,7 +11,7 @@ class HoppieConnector(object):
 
     Connector for interacting with Hoppie's ACARS service.
     """
-    def __init__(self, station_name: str, logon: str):
+    def __init__(self, station_name: str, logon: str, url: str | None = None):
         """Create a new connector
 
         Note:
@@ -20,9 +20,10 @@ class HoppieConnector(object):
         Args:
             station_name (str): Own station name
             logon (str): API logon code
+            url (str, optional): API URL. Defaults to None.
         """
         self._f = HoppieMessageFactory(station_name)
-        self._api = HoppieAPI(logon)
+        self._api = HoppieAPI(logon, url)
 
     def _get_data_from_response(self, response: SuccessResponse) -> list[tuple[int | None, HoppieMessage]]:
         result = []

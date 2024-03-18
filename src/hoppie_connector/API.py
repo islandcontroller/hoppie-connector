@@ -7,14 +7,16 @@ class HoppieAPI(object):
     
     Hoppie API connection
     """
-    def __init__(self, logon: str, url: str = 'https://www.hoppie.nl/acars/system/connect.html'):
+    _DEFAULT_URL: str = 'https://www.hoppie.nl/acars/system/connect.html'
+
+    def __init__(self, logon: str, url: str | None = None):
         """Prepare new API connection
 
         Args:
             logon (str): Logon code
-            url (str, optional): API URL. Defaults to `https://www.hoppie.nl/acars/system/connect.html`.
+            url (str, optional): API URL. Defaults to None.
         """
-        self._url = url
+        self._url = url if url is not None else self._DEFAULT_URL
         self._logon = logon
 
     def connect(self, msg: HoppieMessage) -> HoppieResponse:
