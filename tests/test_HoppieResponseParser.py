@@ -8,6 +8,7 @@ class TestHoppieResponseParser(unittest.TestCase):
 
     def test_error_response(self):   self.assertIsInstance(self._UUT.parse('error {}'), ErrorResponse)
     def test_success_response(self): self.assertIsInstance(self._UUT.parse('ok'), SuccessResponse)
+    def test_invalid_response(self): self.assertRaises(ValueError, lambda: self._UUT.parse('invalid'))
     def test_empty_response(self):   self.assertRaises(ValueError, lambda: self._UUT.parse(''))
 
 class TestErrorResponseParser(unittest.TestCase):
