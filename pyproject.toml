@@ -32,6 +32,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+Test = [
+    "responses>=0.25"
+]
+
 [project.urls]
 Repository = "https://github.com/islandcontroller/hoppie_connector.git"
 Issues = "https://github.com/islandcontroller/hoppie_connector/issues"
