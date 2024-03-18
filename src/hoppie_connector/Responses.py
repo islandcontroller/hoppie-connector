@@ -72,7 +72,7 @@ class HoppieResponseParser(object):
         return ErrorResponse(m.group(1))
 
     def _parse_message_data_item(self, content: str) -> dict | None:
-        m = re.match(r'\{(\d+\s)?([A-Z0-9]+)\s([a-z\s]+)\s\{([^\}]*)\}\}', content)
+        m = re.match(r'\{(\d+\s)?([A-Z0-9]+)\s([a-z\s\-]+)\s\{([^\}]*)\}\}', content)
         if not m: return None
 
         id = None if m.group(1) is None else int(m.group(1), base=10)
@@ -88,7 +88,7 @@ class HoppieResponseParser(object):
 
     def _parse_success(self, content: str) -> SuccessResponse:
         items = []
-        for m in re.findall(r'(\{(?:\d+\s)?[A-Z0-9]+\s[a-z\s]+\s\{[^\}]*\}\})', content, flags=re.DOTALL):
+        for m in re.findall(r'(\{(?:\d+\s)?[A-Z0-9]+\s[a-z\s\-]+\s\{[^\}]*\}\})', content, flags=re.DOTALL):
             items.append(self._parse_message_data_item(m))
         return SuccessResponse(items)
 
