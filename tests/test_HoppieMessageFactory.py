@@ -21,6 +21,23 @@ class TestHoppieMessageFactory(unittest.TestCase):
         self.assertIsInstance(actual, tuple)
         self.assertIsInstance(actual[0], int)
         self.assertIsInstance(actual[1], ProgressMessage)
+    def test_empty_id(self):
+        actual = self._UUT.create_from_data({'id': None, 'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
+        self.assertIsInstance(actual, tuple)
+        self.assertIsNone(actual[0])
+        self.assertIsInstance(actual[1], TelexMessage)
+
+class TestHoppieMessageFactoryErrorHandling(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieMessageFactory('OPS')
+
+    def test_invalid_type(self):
+        self.assertRaises(ValueError, lambda: self._UUT.create_from_data({'id': 0, 'from': 'CALLSIGN', 'type': 'invalid', 'packet': ''}))
+
+    def test_unimplemented_type(self):
+        self.assertRaises(ValueError, lambda: self._UUT.create_from_data({'id': 0, 'from': 'CALLSIGN', 'type': 'poll', 'packet': ''}))
+        self.assertRaises(ValueError, lambda: self._UUT.create_from_data({'id': 0, 'from': 'CALLSIGN', 'type': 'peek', 'packet': ''}))
 
 class TestTelexMessageFactoryCreate(unittest.TestCase):
     _EXPECTED_FROM: str = 'CALLSIGN'

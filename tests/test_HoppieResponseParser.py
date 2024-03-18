@@ -70,6 +70,16 @@ class TestSuccessPeekResponseParser(unittest.TestCase):
         actual: SuccessResponse = self._UUT.parse('ok {1 FROM type {}}')
         self.assertListEqual(expected, actual.get_items())
 
+    def test_item_types(self):
+        expected = [
+            {'id': 1, 'from': 'FROM', 'type': 'ads-c', 'packet': ''},
+            {'id': 2, 'from': 'FROM', 'type': 'progress', 'packet': ''},
+            {'id': 3, 'from': 'FROM', 'type': 'telex', 'packet': ''},
+            {'id': 4, 'from': 'FROM', 'type': 'datareq', 'packet': ''}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {1 FROM ads-c {}} {2 FROM progress {}} {3 FROM telex {}} {4 FROM datareq {}}')
+        self.assertListEqual(expected, actual.get_items())
+
     def test_multiple_items(self):
         expected = [
             {'id': 1, 'from': 'FROM', 'type': 'type', 'packet': 'packet'},
@@ -104,6 +114,16 @@ class TestSuccessPollResponseParser(unittest.TestCase):
     def test_empty_packet(self):
         expected = [{'id': None, 'from': 'FROM', 'type': 'type', 'packet': ''}]
         actual: SuccessResponse = self._UUT.parse('ok {FROM type {}}')
+        self.assertListEqual(expected, actual.get_items())
+
+    def test_item_types(self):
+        expected = [
+            {'id': None, 'from': 'FROM', 'type': 'ads-c', 'packet': ''},
+            {'id': None, 'from': 'FROM', 'type': 'progress', 'packet': ''},
+            {'id': None, 'from': 'FROM', 'type': 'telex', 'packet': ''},
+            {'id': None, 'from': 'FROM', 'type': 'datareq', 'packet': ''}
+        ]
+        actual: SuccessResponse = self._UUT.parse('ok {FROM ads-c {}} {FROM progress {}} {FROM telex {}} {FROM datareq {}}')
         self.assertListEqual(expected, actual.get_items())
 
     def test_multiple_items(self):
