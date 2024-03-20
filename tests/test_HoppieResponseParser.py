@@ -146,3 +146,25 @@ class TestSuccessPollResponseParser(unittest.TestCase):
         expected = [{'id': None, 'from': 'FROM', 'type': 'type name', 'packet': ''}]
         actual: SuccessResponse = self._UUT.parse('ok {FROM type name {}}')
         self.assertListEqual(expected, actual.get_items())
+
+class TestHoppieResponseParserComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = HoppieResponseParser()
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_type(self):
+        value1 = HoppieResponseParser()
+        value2 = HoppieResponseParser()
+        self.assertEqual(value1, value2)
+    
+    def test_differing_type(self):
+        value1 = HoppieResponseParser()
+        value2 = None
+        self.assertNotEqual(value1, value2)
+
+class TestHoppieResponseParserRepresentation(unittest.TestCase):
+    def test_repr(self):
+        expected = HoppieResponseParser()
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)
