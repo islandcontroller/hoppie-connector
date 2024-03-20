@@ -284,7 +284,6 @@ class AdscMessage(HoppieMessage):
             self._position = position
             self._altitude = altitude
             self._heading = heading
-            self._remark = remark
 
     def get_report_time(self) -> datetime:
         """Return time and day(!) of report
@@ -312,7 +311,7 @@ class AdscMessage(HoppieMessage):
     def get_remark(self) -> str | None:
         """Return remark section contents
         """
-        return self._remark
+        return None
 
     def get_packet_content(self) -> str:
         def _coord_to_string(coord: float) -> str:
@@ -336,8 +335,6 @@ class AdscMessage(HoppieMessage):
                  f" {(self._altitude / 100):.0f}"
         if self._heading:
             packet += f" {self._heading:.0f}"
-        if self._remark:
-            packet += self._remark
         return packet
 
     def __repr__(self) -> str:
