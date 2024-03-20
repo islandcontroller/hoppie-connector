@@ -17,3 +17,9 @@ class TestValidTelexMessage(unittest.TestCase):
 class TestTelexMessageInputValidation(unittest.TestCase):
     def test_message_too_long(self):     self.assertRaises(ValueError, lambda: TelexMessage('CALLSIGN', 'OPS', 221 * 'a'))
     def test_invalid_message_char(self): self.assertRaises(ValueError, lambda: TelexMessage('CALLSIGN', 'OPS', 'ä'))
+
+class TestTelexMessageRepresentation(unittest.TestCase):
+    def test_repr(self):
+        expected = TelexMessage('CALLSIGN', 'OPS', 'Message')
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

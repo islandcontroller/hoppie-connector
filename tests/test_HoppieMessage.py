@@ -1,4 +1,5 @@
 from hoppie_connector.Messages import HoppieMessage
+import copy
 import unittest
 
 class TestValidHoppieMessage(unittest.TestCase):
@@ -33,3 +34,35 @@ class TestHoppieMessageInputValidation(unittest.TestCase):
     def test_invalid_type(self):      self.assertRaises(ValueError, lambda: HoppieMessage('CALLSIGN',  'OPS',       0))
     def test_invalid_from_all(self):  self.assertRaises(ValueError, lambda: HoppieMessage('ALL-CALLSIGNS', 'OPS',   HoppieMessage.MessageType.TELEX))
     def test_special_to_all(self):    self.assertIsInstance(HoppieMessage('OPS', 'ALL-CALLSIGNS', HoppieMessage.MessageType.TELEX), HoppieMessage)
+
+class TestHoppieMessageComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_contents(self):
+        value1 = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
+        value2 = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
+        self.assertEqual(value1, value2)
+
+    def test_differing(self):
+        value1 = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
+        value2 = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.PEEK)
+        self.assertNotEqual(value1, value2)
+
+class TestHoppieMessageRepresentation(unittest.TestCase):
+    def test_str(self):
+        expected = 'CALLSIGN -> OPS [TELEX] '
+        actual = str(HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX))
+        self.assertEqual(expected, actual)
+
+    def test_msg_type_repr(self):
+        expected = HoppieMessage.MessageType.TELEX
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)
+
+    def test_msg_repr(self):
+        expected = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

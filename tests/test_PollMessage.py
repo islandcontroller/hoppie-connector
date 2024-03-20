@@ -12,3 +12,9 @@ class TestValidPollMessage(unittest.TestCase):
 
     def test_get_to_name(self):  self.assertEqual(self._EXPECTED_TO,   self._UUT.get_to_name())
     def test_get_msg_type(self): self.assertEqual(self._EXPECTED_TYPE, self._UUT.get_msg_type())
+
+class TestPollMessageRepresentation(unittest.TestCase):
+    def test_repr(self):
+        expected = PollMessage('OPS')
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

@@ -133,3 +133,24 @@ class TestProgressMessageInputValidation(unittest.TestCase):
     def test_missing_off(self):        self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, time_on=self._TIME_2))
     def test_missing_on(self):         self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, time_off=self._TIME_2, time_in=self._TIME_3))
     def test_eta_after_arrival(self):  self.assertRaises(ValueError, lambda: ProgressMessage('CALLSIGN', 'OPS', 'EDDF', 'EDDH', self._TIME_1, self._TIME_5, self._TIME_2, self._TIME_3, self._TIME_4))
+
+
+class TestProgressMessageRepresentation(unittest.TestCase):
+    _TIME_1: time = time(hour=18, minute=20, second=0, tzinfo=UTC)
+    _TIME_2: time = time(hour=18, minute=25, second=0, tzinfo=UTC)
+    _TIME_3: time = time(hour=18, minute=30, second=0, tzinfo=UTC)
+    _TIME_4: time = time(hour=18, minute=35, second=0, tzinfo=UTC)
+    
+    def test_repr_out_eta(self):
+        import datetime # used inside eval()
+
+        expected = ProgressMessage('CALLSIGN', 'OPS', 'AAAA', 'BBBB', self._TIME_1, self._TIME_2)
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)
+
+    def test_repr_out_off_on_in(self):
+        import datetime # used inside eval()
+
+        expected = ProgressMessage('CALLSIGN', 'OPS', 'AAAA', 'BBBB', self._TIME_1, None, self._TIME_2, self._TIME_3, self._TIME_4)
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

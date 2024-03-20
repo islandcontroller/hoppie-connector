@@ -151,3 +151,25 @@ class TestProgressMessageFactoryFromData(unittest.TestCase):
         self.assertIsNone(actual[1].get_time_off())
         self.assertIsNone(actual[1].get_time_on())
         self.assertIsNone(actual[1].get_eta())
+
+class TestHoppieMessageFactoryComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = HoppieMessageFactory('OPS')
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_content(self):
+        value1 = HoppieMessageFactory('OPS')
+        value2 = HoppieMessageFactory('OPS')
+        self.assertEqual(value1, value2)
+
+    def test_differing(self):
+        value1 = HoppieMessageFactory('OPS')
+        value2 = HoppieMessageFactory('CALLSIGN')
+        self.assertNotEqual(value1, value2)
+
+class TestHoppieMessageFactoryRepresentation(unittest.TestCase):
+    def test_repr(self):
+        expected = HoppieMessageFactory('OPS')
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

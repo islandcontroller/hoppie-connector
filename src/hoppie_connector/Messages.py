@@ -14,6 +14,9 @@ class HoppieMessage(object):
         POLL = 'poll'
         PEEK = 'peek'
 
+        def __repr__(self) -> str:
+            return f"HoppieMessage.MessageType.{self.name}"
+
     def _is_valid_station_name(self, name: str) -> bool:
         return bool(re.match(r'^[A-Z0-9]{3,8}$', name))
 
@@ -29,7 +32,7 @@ class HoppieMessage(object):
             to_name (str): Recipient station name
             type (MessageType): Message type code
         """
-        if type not in self.MessageType:
+        if not isinstance(type, self.MessageType):
             raise ValueError('Invalid message type')
         elif not self._is_valid_station_name(from_name):
             raise ValueError('Invalid FROM station name')
@@ -64,17 +67,20 @@ class HoppieMessage(object):
         """Return collated metadata
         """
         return {
-            'from': self._from,
-            'to': self._to,
-            'type': self._type.value,
+            'from': self.get_from_name(),
+            'to': self.get_to_name(),
+            'type': self.get_msg_type().value,
             'packet': self.get_packet_content()
         }
 
     def __str__(self) -> str:
-        return str(self.get_msg_params())
+        return f"{self.get_from_name()} -> {self.get_to_name()} [{self.get_msg_type().name}] {self.get_packet_content()}"
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return f"HoppieMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, type={self.get_msg_type()!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, HoppieMessage) and (self.get_msg_params() == __value.get_msg_params())
 
 class PeekMessage(HoppieMessage): 
     """PeekMessage()
@@ -89,6 +95,9 @@ class PeekMessage(HoppieMessage):
         """
         super().__init__(from_name, 'SERVER', self.MessageType.PEEK)
 
+    def __repr__(self) -> str:
+        return f"PeekMessage(from_name={self.get_from_name()!r})"
+
 class PollMessage(HoppieMessage):
     """PollMessage()
     
@@ -101,6 +110,9 @@ class PollMessage(HoppieMessage):
             from_name (str): Sender station name
         """
         super().__init__(from_name, 'SERVER', self.MessageType.POLL)
+
+    def __repr__(self) -> str:
+        return f"PollMessage(from_name={self.get_from_name()!r})"
 
 class TelexMessage(HoppieMessage):
     """TelexMessage(from_name, to_name, message)
@@ -132,6 +144,9 @@ class TelexMessage(HoppieMessage):
 
     def get_packet_content(self) -> str:
         return self._message.upper()
+
+    def __repr__(self) -> str:
+        return f"TelexMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, message={self.get_message()!r})"
 
 class ProgressMessage(HoppieMessage):
     """ProgressMessage(from_name, to_name, dep, arr, time_out[, time_eta[, time_off[, time_on[, time_in]]]])
@@ -229,6 +244,9 @@ class ProgressMessage(HoppieMessage):
         if self._eta: packet += f" ETA/{_get_utc(self._eta):%H%M}"
         return packet
 
+    def __repr__(self) -> str:
+        return f"ProgressMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, dep={self.get_departure()!r}, arr={self.get_arrival()!r}, time_out={self.get_time_out()!r}, time_eta={self.get_eta()!r}, time_off={self.get_time_off()!r}, time_on={self.get_time_on()!r}, time_in={self.get_time_in()!r})"
+
 class AdscMessage(HoppieMessage):
     """AdscMessage(from_name, to_name, report_time, posotion, altitude[, heading[, remark]])
     
@@ -315,6 +333,9 @@ class AdscMessage(HoppieMessage):
         if self._heading: packet += f" {self._heading:.0f}"
         if self._remark: packet += self._remark
         return packet
+
+    def __repr__(self) -> str:
+        return f"AdscMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, report_time={self.get_report_time()!r}, position={self.get_position()!r}, altitude={self.get_altitude()!r}, heading={self.get_heading()!r}, remark={self.get_remark()!r})"
 
 class HoppieMessageFactory(object):
     """HoppieMessageFactory(station)
@@ -406,3 +427,9 @@ class HoppieMessageFactory(object):
             message (str): Message content
         """
         return TelexMessage(self._station, to_name, message)
+
+    def __repr__(self) -> str:
+        return f"HoppieMessageFactory(station={self._station!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, HoppieMessageFactory) and (self._station == __value._station)
