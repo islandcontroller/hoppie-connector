@@ -108,4 +108,3 @@ class HoppieResponseParser(object):
         match HoppieResponse.ResponseCode(m.group(1)):
             case HoppieResponse.ResponseCode.ERROR: return self._parse_error(content)
             case HoppieResponse.ResponseCode.OK:    return self._parse_success(content)
-            case _: raise NotImplementedError()
