@@ -101,12 +101,15 @@ class HoppieResponseParser(object):
     """
     def _parse_error(self, content: str) -> ErrorResponse:
         m = re.search(r'\{(.*)\}', content, flags=re.DOTALL)
-        if not m: raise ValueError('Invalid error message format')
-        return ErrorResponse(m.group(1))
+        if not m:
+            raise ValueError('Invalid error message format')
+        else:
+            return ErrorResponse(m.group(1))
 
     def _parse_message_data_item(self, content: str) -> dict | None:
         m = re.match(r'\{(\d+\s)?([A-Z0-9]+)\s([a-z\s\-]+)\s\{([^\}]*)\}\}', content)
-        if not m: return None
+        if not m:
+            return None
 
         id = None if m.group(1) is None else int(m.group(1), base=10)
         from_name = m.group(2)
@@ -135,12 +138,15 @@ class HoppieResponseParser(object):
             HoppieResponse: Parsed response
         """
         m = re.match(r'^(ok|error)\s?(.*)$', response, flags=re.DOTALL)
-        if not m: raise ValueError('Invalid response format')
+        if not m:
+            raise ValueError('Invalid response format')
         
         content = m.group(2).strip() if m.group(2) else ''
         match HoppieResponse.ResponseCode(m.group(1)):
-            case HoppieResponse.ResponseCode.ERROR: return self._parse_error(content)
-            case HoppieResponse.ResponseCode.OK:    return self._parse_success(content)
+            case HoppieResponse.ResponseCode.ERROR:
+                return self._parse_error(content)
+            case HoppieResponse.ResponseCode.OK:
+                return self._parse_success(content)
 
     def __eq__(self, __value: object) -> bool:
         return isinstance(__value, HoppieResponseParser)

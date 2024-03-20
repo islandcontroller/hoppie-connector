@@ -238,10 +238,14 @@ class ProgressMessage(HoppieMessage):
                 return adjusted.time()
 
         packet = f"{self._dep}/{self._arr} OUT/{_get_utc(self._out):%H%M}"
-        if self._off: packet += f" OFF/{_get_utc(self._off):%H%M}"
-        if self._on: packet += f" ON/{_get_utc(self._on):%H%M}"
-        if self._in: packet += f" IN/{_get_utc(self._in):%H%M}"
-        if self._eta: packet += f" ETA/{_get_utc(self._eta):%H%M}"
+        if self._off: 
+            packet += f" OFF/{_get_utc(self._off):%H%M}"
+        if self._on: 
+            packet += f" ON/{_get_utc(self._on):%H%M}"
+        if self._in: 
+            packet += f" IN/{_get_utc(self._in):%H%M}"
+        if self._eta: 
+            packet += f" ETA/{_get_utc(self._eta):%H%M}"
         return packet
 
     def __repr__(self) -> str:
@@ -330,8 +334,10 @@ class AdscMessage(HoppieMessage):
                  f" {_coord_to_string(self._position[0])}" \
                  f" {_coord_to_string(self._position[1])}" \
                  f" {(self._altitude / 100):.0f}"
-        if self._heading: packet += f" {self._heading:.0f}"
-        if self._remark: packet += self._remark
+        if self._heading:
+            packet += f" {self._heading:.0f}"
+        if self._remark:
+            packet += self._remark
         return packet
 
     def __repr__(self) -> str:
@@ -351,36 +357,48 @@ class HoppieMessageFactory(object):
     def _create_progress_from_data(self, from_name: str, packet: str) -> ProgressMessage:
         def _get_aprt(packet: str) -> tuple[str, str] | None:
             m = re.match(r'^([A-Z]{4})\/([A-Z]{4})', packet)
-            if not m: raise ValueError('Invalid dep/arr value')
-            else:     return m.group(1), m.group(2)
+            if not m:
+                raise ValueError('Invalid dep/arr value')
+            else:
+                return m.group(1), m.group(2)
 
         def _get_time(timestr: str) -> time:
             return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).timetz()
 
         def _get_time_out(packet: str) -> time | None:
             m = re.search(r'OUT\/(\d{4})Z?', packet)
-            if not m: raise ValueError('Invalid OUT value')
-            else:     return _get_time(m.group(1))
+            if not m:
+                raise ValueError('Invalid OUT value')
+            else:
+                return _get_time(m.group(1))
 
         def _get_time_off(packet: str) -> time | None:
             m = re.search(r'OFF\/(\d{4})Z?', packet)
-            if not m: return None
-            else:     return _get_time(m.group(1))
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
 
         def _get_eta(packet: str) -> time | None:
             m = re.search(r'ETA\/(\d{4})Z?', packet)
-            if not m: return None
-            else:     return _get_time(m.group(1))
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
 
         def _get_time_on(packet: str) -> time | None:
             m = re.search(r'ON\/(\d{4})Z?', packet)
-            if not m: return None
-            else:     return _get_time(m.group(1))
+            if not m:
+                return None
+            else: 
+                return _get_time(m.group(1))
 
         def _get_time_in(packet: str) -> time | None:
             m = re.search(r'IN\/(\d{4})Z?', packet)
-            if not m: return None
-            else:     return _get_time(m.group(1))
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
 
         dep, arr = _get_aprt(packet)
         time_out = _get_time_out(packet)
@@ -403,9 +421,12 @@ class HoppieMessageFactory(object):
         packet = data['packet']
 
         match HoppieMessage.MessageType(type_name):
-            case HoppieMessage.MessageType.TELEX:    msg = self._create_telex_from_data(from_name, packet)
-            case HoppieMessage.MessageType.PROGRESS: msg = self._create_progress_from_data(from_name, packet)
-            case _: raise ValueError(f"Message type '{type_name}' not yet implemented")
+            case HoppieMessage.MessageType.TELEX:
+                msg = self._create_telex_from_data(from_name, packet)
+            case HoppieMessage.MessageType.PROGRESS:
+                msg = self._create_progress_from_data(from_name, packet)
+            case _:
+                raise ValueError(f"Message type '{type_name}' not yet implemented")
 
         return id, msg
 
