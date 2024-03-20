@@ -100,6 +100,9 @@ class TestHoppieApiConnectErrorHandling(unittest.TestCase):
         responses.get(self._URL, body=b'\x12\x39\x0a\xf9')
         self.assertRaises(UnicodeDecodeError, self._trigger_connect)
 
+    def test_invalid_connect_msg(self):
+        self.assertRaises(ValueError, lambda: self._UUT.connect(None))
+
 class TestHoppieApiComparison(unittest.TestCase):
     def test_same(self):
         value1 = HoppieAPI('logon')
