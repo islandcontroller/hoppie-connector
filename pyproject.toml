@@ -34,7 +34,10 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 Test = [
-    "responses>=0.25"
+    "pytest>=8.1",
+    "pytest-cov>=4.1",
+    "responses>=0.25",
+    "ruff>=0.3"
 ]
 
 [project.urls]
@@ -43,6 +46,10 @@ Issues = "https://github.com/islandcontroller/hoppie_connector/issues"
 Documentation = "https://github.com/islandcontroller/hoppie_connector/wiki"
 
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+addopts = "--cov=hoppie_connector --cov-report=xml --cov-fail-under=100"
+testpaths = ["tests"]
 
 [tool.ruff]
 extend-exclude = ["tests"]
