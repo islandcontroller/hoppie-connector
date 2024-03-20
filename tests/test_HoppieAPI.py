@@ -99,3 +99,30 @@ class TestHoppieApiConnectErrorHandling(unittest.TestCase):
     def test_http_nonascii_content(self):
         responses.get(self._URL, body=b'\x12\x39\x0a\xf9')
         self.assertRaises(UnicodeDecodeError, self._trigger_connect)
+
+class TestHoppieApiComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = HoppieAPI('logon')
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_content(self):
+        value1 = HoppieAPI('logon', 'url')
+        value2 = HoppieAPI('logon', 'url')
+        self.assertEqual(value1, value2)
+
+    def test_differing_logon(self):
+        value1 = HoppieAPI('logon1', 'url')
+        value2 = HoppieAPI('logon2', 'url')
+        self.assertNotEqual(value1, value2)
+
+    def test_differing_url(self):
+        value1 = HoppieAPI('logon', 'url1')
+        value2 = HoppieAPI('logon', 'url2')
+        self.assertNotEqual(value1, value2)
+
+class TestHoppieApiRepresentation(unittest.TestCase):
+    def test_repr(self):
+        expected = HoppieAPI('logon', 'url')
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

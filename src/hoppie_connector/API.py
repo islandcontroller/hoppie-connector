@@ -39,3 +39,9 @@ class HoppieAPI(object):
         
         content = response.content.decode('ascii')
         return HoppieResponseParser().parse(content)
+
+    def __repr__(self) -> str:
+        return f"HoppieAPI(logon={self._logon!r}, url={self._url!r})"
+    
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, HoppieAPI) and (self._logon == __value._logon) and (self._url == __value._url)
