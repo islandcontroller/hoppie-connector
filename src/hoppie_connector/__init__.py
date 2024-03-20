@@ -3,8 +3,10 @@ from .Responses import ErrorResponse, SuccessResponse
 from .API import HoppieAPI
 import warnings
 
-class HoppieError(Exception): pass
-class HoppieWarning(UserWarning): pass
+class HoppieError(Exception):
+    pass
+class HoppieWarning(UserWarning):
+    pass
 
 class HoppieConnector(object):
     """HoppieConnector(station_name, logon)
@@ -26,24 +28,25 @@ class HoppieConnector(object):
         self._api = HoppieAPI(logon, url)
 
     def _get_data_from_response(self, response: SuccessResponse) -> list[tuple[int | None, HoppieMessage]]:
-        result = []
-        for item_data in response.get_items():
-            try:
-                id, msg = self._f.create_from_data(item_data)
-                result.append((id, msg))
-            except ValueError as e:
-                warnings.warn(f"Unable to parse {item_data}: {e}", HoppieWarning)
-        return result
+        if not isinstance(response, SuccessResponse):
+            raise ValueError('Invalid response data type')
+        else:
+            result = []
+            for item_data in response.get_items():
+                try:
+                    id, msg = self._f.create_from_data(item_data)
+                    result.append((id, msg))
+                except ValueError as e:
+                    warnings.warn(f"Unable to parse {item_data}: {e}", HoppieWarning)
+            return result
 
     def _connect(self, message: HoppieMessage) -> list[tuple[int | None, HoppieMessage]]:
         response = self._api.connect(message)
 
         if isinstance(response, ErrorResponse): 
             raise HoppieError(response.get_reason())
-        elif isinstance(response, SuccessResponse):
-            return self._get_data_from_response(response)
-        else:
-            raise NotImplementedError()
+        
+        return self._get_data_from_response(response)
 
     def peek(self) -> list[tuple[int | None, HoppieMessage]]:
         """Peek all messages destined to own station
@@ -58,7 +61,7 @@ class HoppieConnector(object):
         """
         return self._connect(self._f.create_peek())
 
-    def poll(self) -> list[tuple[int | None, HoppieMessage]]:
+    def poll(self) -> list[HoppieMessage]:
         """Poll for new messages destined to own station and mark them as relayed.
 
         Note:
@@ -66,14 +69,10 @@ class HoppieConnector(object):
             received messages as 'relayed'. Previously relayed messages will 
             not reappear in the next `poll` response.
 
-        Note:
-            Poll responses do not contain message IDs. Hence, the ID will always
-            be `None`.
-
         Returns:
-            list[tuple[int | None, HoppieMessage]]: List of messages (id, content)
+            list[HoppieMessage]: List of messages
         """
-        return self._connect(self._f.create_poll())
+        return [data[1] for data in self._connect(self._f.create_poll())]
     
     def send_telex(self, to_name: str, message: str) -> None:
         """Send a freetext message to recipient station.
