@@ -43,6 +43,14 @@ class TestErrorResponseParser(unittest.TestCase):
         actual: ErrorResponse = self._UUT.parse('error {reason} garbage')
         self.assertEqual('reason', actual.get_reason())
 
+class TestSuccessResponseParser(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieResponseParser()
+    
+    def test_internal_regex_mismatch(self):
+        self.assertIsNone(self._UUT._parse_message_data_item(''))
+
 class TestSuccessPeekResponseParser(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
