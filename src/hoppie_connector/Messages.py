@@ -332,7 +332,7 @@ class AdscMessage(HoppieMessage):
                  f" {self._time.astimezone(UTC):%d%H%M}" \
                  f" {_coord_to_string(self._position[0])}" \
                  f" {_coord_to_string(self._position[1])}" \
-                 f" {(self._altitude / 100):.0f}"
+                 f" {(self._altitude):.0f}"
         if self._heading:
             packet += f" {self._heading:.0f}"
         return packet

@@ -7,7 +7,7 @@ class TestValidAdscMessage(unittest.TestCase):
     _EXPECTED_RPT: datetime = datetime.datetime(year=2000, month=2, day=1, hour=18, minute=20, second=0, tzinfo=datetime.UTC)
     _EXPECTED_POS: tuple[float, float] = (-10.0, 10.0)
     _EXPECTED_ALT: float = 3000.0
-    _EXPECTED_PACKET: str = 'REPORT CALLSIGN 011820 -10.0000 10.00000 30'
+    _EXPECTED_PACKET: str = 'REPORT CALLSIGN 011820 -10.0000 10.00000 3000'
     
     def setUp(self) -> None:
         super().setUp()
@@ -26,7 +26,7 @@ class TestValidAdscMessageHeading(unittest.TestCase):
     _EXPECTED_POS: tuple[float, float] = (-10.0, 10.0)
     _EXPECTED_ALT: float = 3000.0
     _EXPECTED_HDG: float = 90.0
-    _EXPECTED_PACKET: str = 'REPORT CALLSIGN 011820 -10.0000 10.00000 30 90'
+    _EXPECTED_PACKET: str = 'REPORT CALLSIGN 011820 -10.0000 10.00000 3000 90'
 
     def setUp(self) -> None:
         super().setUp()
@@ -41,37 +41,37 @@ class TestValidAdscMessagePosition(unittest.TestCase):
 
     def test_positive_1(self): 
         position = (1.0, 1.0)
-        expected = 'REPORT CALLSIGN 011820 1.000000 1.000000 30'
+        expected = 'REPORT CALLSIGN 011820 1.000000 1.000000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
 
     def test_positive_10(self): 
         position = (10.0, 10.0)
-        expected = 'REPORT CALLSIGN 011820 10.00000 10.00000 30'
+        expected = 'REPORT CALLSIGN 011820 10.00000 10.00000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
     
     def test_positive_100(self): 
         position = (10.0, 100.0)
-        expected = 'REPORT CALLSIGN 011820 10.00000 100.0000 30'
+        expected = 'REPORT CALLSIGN 011820 10.00000 100.0000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
 
     def test_negative_1(self): 
         position = (-1.0, -1.0)
-        expected = 'REPORT CALLSIGN 011820 -1.00000 -1.00000 30'
+        expected = 'REPORT CALLSIGN 011820 -1.00000 -1.00000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
 
     def test_negative_10(self): 
         position = (-10.0, -10.0)
-        expected = 'REPORT CALLSIGN 011820 -10.0000 -10.0000 30'
+        expected = 'REPORT CALLSIGN 011820 -10.0000 -10.0000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
 
     def test_negative_100(self): 
         position = (-10.0, -100.0)
-        expected = 'REPORT CALLSIGN 011820 -10.0000 -100.000 30'
+        expected = 'REPORT CALLSIGN 011820 -10.0000 -100.000 3000'
         actual = AdscMessage('CALLSIGN', 'OPS', self._EXPECTED_RPT, position, self._EXPECTED_ALT).get_packet_content()
         self.assertEqual(expected, actual)
 
