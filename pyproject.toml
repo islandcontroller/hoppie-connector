@@ -41,9 +41,10 @@ Test = [
 ]
 
 [project.urls]
-Repository = "https://github.com/islandcontroller/hoppie_connector.git"
-Issues = "https://github.com/islandcontroller/hoppie_connector/issues"
-Documentation = "https://github.com/islandcontroller/hoppie_connector/wiki"
+Homepage = "https://islandcontroller.github.io/hoppie-connector/"
+Repository = "https://github.com/islandcontroller/hoppie-connector.git"
+Issues = "https://github.com/islandcontroller/hoppie-connector/issues/"
+Documentation = "https://github.com/islandcontroller/hoppie-connector/wiki/"
 
 [tool.setuptools_scm]
 
