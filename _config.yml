@@ -1,0 +1,5 @@
+remote_theme: pages-themes/cayman@v0.2.0
+
+title: hoppie-connector
+description: A Python connector for Hoppie's ACARS service
+show_downloads: false
