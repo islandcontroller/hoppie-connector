@@ -1,5 +1,5 @@
 from .Messages import HoppieMessage
-from .Responses import HoppieResponse, HoppieResponseParser
+from .Responses import HoppieResponse, HoppieResponseParserFactory
 import requests
 
 class HoppieAPI(object):
@@ -42,8 +42,9 @@ class HoppieAPI(object):
         if not response.ok: 
             raise ConnectionError(f"Error {response.status_code}: {response.reason}")
         
+        parser = HoppieResponseParserFactory().create_parser(msg.get_msg_type())
         content = response.content.decode('ascii')
-        return HoppieResponseParser().parse(content)
+        return parser.parse(content)
 
     def __repr__(self) -> str:
         return f"HoppieAPI(logon={self._logon!r}, url={self._url!r})"

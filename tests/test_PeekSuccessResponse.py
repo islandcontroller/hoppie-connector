@@ -1,23 +1,23 @@
-from hoppie_connector.Responses import SuccessResponse, HoppieResponse
+from hoppie_connector.Responses import PeekSuccessResponse, HoppieResponse
 import unittest
 
-class TestSuccessResponse(unittest.TestCase):
+class TestPeekSuccessResponse(unittest.TestCase):
     def test_get_code(self):
         expected = HoppieResponse.ResponseCode.OK
-        actual = SuccessResponse().get_code()
+        actual = PeekSuccessResponse([]).get_code()
         self.assertEqual(expected, actual)
 
     def test_compare_same(self):
-        value1 = SuccessResponse()
+        value1 = PeekSuccessResponse([])
         value2 = value1
         self.assertEqual(value1, value2)
 
     def test_str(self):
-        expected = '''[OK]'''
-        actual = str(SuccessResponse())
+        expected = '''[OK] []'''
+        actual = str(PeekSuccessResponse([]))
         self.assertEqual(expected, actual)
 
     def test_repr(self):
-        expected = SuccessResponse()
+        expected = PeekSuccessResponse([])
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)

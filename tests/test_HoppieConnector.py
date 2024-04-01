@@ -46,13 +46,15 @@ class TestHoppieConnectorErrorHandling(unittest.TestCase):
 
     @responses.activate
     def test_error(self):
-        responses.get(self._URL, body='error {illegal logon code}')
-        self.assertRaises(HoppieError, lambda: HoppieConnector(self._STATION, self._LOGON, self._URL).peek())
+        responses.post(self._URL, body='error {illegal logon code}')
+        self.assertRaises(HoppieError, lambda: HoppieConnector(self._STATION, self._LOGON, self._URL).send_telex('CALLSIGN', 'MESSAGE'))
 
     @responses.activate
-    def test_warning(self):
+    def test_peek_warning(self):
+        responses.get(self._URL, body='ok {1 CALLSIGN unknown {OTHER DATA}}')
+        self.assertWarns(HoppieWarning, lambda: HoppieConnector(self._STATION, self._LOGON, self._URL).peek())
+
+    @responses.activate
+    def test_poll_warning(self):
         responses.get(self._URL, body='ok {CALLSIGN unknown {OTHER DATA}}')
         self.assertWarns(HoppieWarning, lambda: HoppieConnector(self._STATION, self._LOGON, self._URL).poll())
-
-    def test_internal_none_response(self):
-        self.assertRaises(ValueError, lambda: HoppieConnector(self._STATION, self._LOGON, self._URL)._get_data_from_response(None))

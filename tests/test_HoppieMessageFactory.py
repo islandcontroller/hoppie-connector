@@ -12,20 +12,14 @@ class TestHoppieMessageFactory(unittest.TestCase):
     def test_create_poll(self):     self.assertIsInstance(self._UUT.create_poll(), PollMessage)
     def test_create_telex(self):    self.assertIsInstance(self._UUT.create_telex('OPS', ''), TelexMessage)
     def test_telex_from_data(self): 
-        actual = self._UUT.create_from_data({'id': 0, 'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
-        self.assertIsInstance(actual, tuple)
-        self.assertIsInstance(actual[0], int)
-        self.assertIsInstance(actual[1], TelexMessage)
+        actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
+        self.assertIsInstance(actual, TelexMessage)
     def test_progress_from_data(self): 
-        actual = self._UUT.create_from_data({'id': 0, 'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'})
-        self.assertIsInstance(actual, tuple)
-        self.assertIsInstance(actual[0], int)
-        self.assertIsInstance(actual[1], ProgressMessage)
+        actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'})
+        self.assertIsInstance(actual, ProgressMessage)
     def test_empty_id(self):
-        actual = self._UUT.create_from_data({'id': None, 'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
-        self.assertIsInstance(actual, tuple)
-        self.assertIsNone(actual[0])
-        self.assertIsInstance(actual[1], TelexMessage)
+        actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
+        self.assertIsInstance(actual, TelexMessage)
 
 class TestHoppieMessageFactoryErrorHandling(unittest.TestCase):
     def setUp(self) -> None:
@@ -59,75 +53,67 @@ class TestTelexMessageFactoryCreate(unittest.TestCase):
         self.assertEqual('Message', actual.get_message())
 
 class TestTelexMessageFactoryFromData(unittest.TestCase):
-    _PRESET: dict = {'id': 0, 'from': 'CALLSIGN', 'type': 'telex', 'packet': ''}
+    _PRESET: dict = {'from': 'CALLSIGN', 'type': 'telex', 'packet': ''}
 
     def setUp(self) -> None:
         super().setUp()
         self._UUT = HoppieMessageFactory('OPS')
 
-    def test_message_id(self):
-        actual: tuple[int, TelexMessage] = self._UUT.create_from_data({**self._PRESET, 'id': 1234})
-        self.assertEqual(1234, actual[0])
-
     def test_empty_message(self):
-        actual: tuple[int, TelexMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': ''})
-        self.assertEqual('', actual[1].get_message())
+        actual: TelexMessage = self._UUT.create_from_data({**self._PRESET, 'packet': ''})
+        self.assertEqual('', actual.get_message())
 
     def test_valid_message(self):
-        actual: tuple[int, TelexMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'Message'})
-        self.assertEqual('Message', actual[1].get_message())
+        actual: TelexMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'Message'})
+        self.assertEqual('Message', actual.get_message())
 
     def test_oversize_content(self):
         self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 221*'a'}))
 
 class TestProgressMessageFactoryFromData(unittest.TestCase):
-    _PRESET: dict = {'id': 0, 'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'}
+    _PRESET: dict = {'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'}
 
     def setUp(self) -> None:
         super().setUp()
         self._UUT = HoppieMessageFactory('OPS')
 
-    def test_message_id(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'id': 1234})
-        self.assertEqual(1234, actual[0])
-
     def test_valid_departure(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'EDDF/ZZZZ OUT/0000'})
-        self.assertEqual('EDDF', actual[1].get_departure())
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'EDDF/ZZZZ OUT/0000'})
+        self.assertEqual('EDDF', actual.get_departure())
 
     def test_valid_arrival(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/EDDH OUT/0000'})
-        self.assertEqual('EDDH', actual[1].get_arrival())
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/EDDH OUT/0000'})
+        self.assertEqual('EDDH', actual.get_arrival())
 
     def test_time_out(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_time_out())
+        self.assertEqual(expected, actual.get_time_out())
 
     def test_time_out_eta(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 ETA/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 ETA/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_eta())
+        self.assertEqual(expected, actual.get_eta())
 
     def test_time_off(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_time_off())
+        self.assertEqual(expected, actual.get_time_off())
 
     def test_time_off_eta(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ETA/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ETA/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_eta())
+        self.assertEqual(expected, actual.get_eta())
 
     def test_time_on(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_time_on())
+        self.assertEqual(expected, actual.get_time_on())
 
     def test_time_in(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/0002 IN/1820'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/0002 IN/1820'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_time_in())
+        self.assertEqual(expected, actual.get_time_in())
 
     def test_missing_out(self):
         self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ'}))
@@ -145,12 +131,12 @@ class TestProgressMessageFactoryFromData(unittest.TestCase):
         self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/0000 OFF/0001 ON/9999'}))
 
     def test_special_empty_case(self):
-        actual: tuple[int, ProgressMessage] = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820 OFF/----- ON/----- ETA/-----'})
+        actual: ProgressMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'ZZZZ/ZZZZ OUT/1820 OFF/----- ON/----- ETA/-----'})
         expected = datetime.strptime('1820', '%H%M').replace(tzinfo=UTC).timetz()
-        self.assertEqual(expected, actual[1].get_time_out())
-        self.assertIsNone(actual[1].get_time_off())
-        self.assertIsNone(actual[1].get_time_on())
-        self.assertIsNone(actual[1].get_eta())
+        self.assertEqual(expected, actual.get_time_out())
+        self.assertIsNone(actual.get_time_off())
+        self.assertIsNone(actual.get_time_on())
+        self.assertIsNone(actual.get_eta())
 
 class TestHoppieMessageFactoryComparison(unittest.TestCase):
     def test_same(self):

@@ -406,26 +406,23 @@ class HoppieMessageFactory(object):
 
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
-    def create_from_data(self, data: dict) -> tuple[int, HoppieMessage]:
+    def create_from_data(self, data: dict) -> HoppieMessage:
         """Create `HoppieMessage` object from API response data
 
         Args:
             data (dict): API response data
         """
-        id = data['id']
         from_name = data['from']
         type_name = data['type']
         packet = data['packet']
 
         match HoppieMessage.MessageType(type_name):
             case HoppieMessage.MessageType.TELEX:
-                msg = self._create_telex_from_data(from_name, packet)
+                return self._create_telex_from_data(from_name, packet)
             case HoppieMessage.MessageType.PROGRESS:
-                msg = self._create_progress_from_data(from_name, packet)
+                return self._create_progress_from_data(from_name, packet)
             case _:
                 raise ValueError(f"Message type '{type_name}' not yet implemented")
-
-        return id, msg
 
     def create_peek(self) -> PeekMessage:
         """Create a "peek"-message

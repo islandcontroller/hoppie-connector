@@ -1,3 +1,4 @@
+from hoppie_connector.Messages import HoppieMessage
 import enum
 import re
 
@@ -67,32 +68,79 @@ class ErrorResponse(HoppieResponse):
         return f"ErrorResponse(reason={self.get_reason()!r})"
 
 class SuccessResponse(HoppieResponse):
-    """SuccessResponse(items)
+    """SuccessResponse()
     
     Success indication issued by the Hoppie API server.
     """
-    def __init__(self, items: list[dict]):
+    def __init__(self):
+        """Create success response
+        """
+        super().__init__(HoppieResponse.ResponseCode.OK)
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, SuccessResponse) and super().__eq__(__value)
+
+    def __str__(self) -> str:
+        return f"{super().__str__()}"
+
+    def __repr__(self) -> str:
+        return 'SuccessResponse()'
+
+class PollSuccessResponse(SuccessResponse):
+    """PollSuccessResponse(msg_data)
+    
+    Success indication issued by the Hoppie API server in response to a poll request
+    """
+    def __init__(self, msg_data: list[dict]):
         """Create success response
 
         Args:
-            items (list[dict]): Response data
+            msg_data (list[dict]): List of message data objects
         """
-        super().__init__(HoppieResponse.ResponseCode.OK)
-        self._items = items
+        super().__init__()
+        self._data = msg_data
 
-    def get_items(self) -> list[dict]:
-        """Return response data items
+    def get_data(self) -> list[dict]:
+        """Return contained message data
         """
-        return self._items
+        return self._data
 
     def __eq__(self, __value: object) -> bool:
-        return isinstance(__value, SuccessResponse) and super().__eq__(__value) and (self.get_items() == __value.get_items())
+        return isinstance(__value, PollSuccessResponse) and super().__eq__(__value) and (self.get_data() == __value.get_data())
 
     def __str__(self) -> str:
-        return f"{super().__str__()} {self.get_items()}"
+        return f"{super().__str__()} {self.get_data()}"
 
     def __repr__(self) -> str:
-        return f"SuccessResponse(items={self.get_items()!r})"
+        return f"PollSuccessResponse(msg_data={self.get_data()!r})"
+
+class PeekSuccessResponse(SuccessResponse):
+    """PeekSuccessResponse(msg_data)
+    
+    Success indication issued by the Hoppie API server in response to a peek request
+    """
+    def __init__(self, msg_data: list[dict]):
+        """Create success response
+
+        Args:
+            msg_data (list[dict]): List of message data objects
+        """
+        super().__init__()
+        self._data = msg_data
+
+    def get_data(self) -> list[dict]:
+        """Return contained message data
+        """
+        return self._data
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, PeekSuccessResponse) and super().__eq__(__value) and (self.get_data() == __value.get_data())
+
+    def __str__(self) -> str:
+        return f"{super().__str__()} {self.get_data()}"
+
+    def __repr__(self) -> str:
+        return f"PeekSuccessResponse(msg_data={self.get_data()!r})"
 
 class HoppieResponseParser(object):
     """HoppieResponseParser()
@@ -106,27 +154,8 @@ class HoppieResponseParser(object):
         else:
             return ErrorResponse(m.group(1))
 
-    def _parse_message_data_item(self, content: str) -> dict | None:
-        m = re.match(r'\{(\d+\s)?([A-Z0-9]+)\s([a-z\s\-]+)\s\{([^\}]*)\}\}', content)
-        if not m:
-            return None
-
-        id = None if m.group(1) is None else int(m.group(1), base=10)
-        from_name = m.group(2)
-        type_name = m.group(3)
-        packet_content = m.group(4)
-        return {
-            'id': id,
-            'from': from_name,
-            'type': type_name,
-            'packet': packet_content
-        }
-
     def _parse_success(self, content: str) -> SuccessResponse:
-        items = []
-        for m in re.findall(r'(\{(?:\d+\s)?[A-Z0-9]+\s[a-z\s\-]+\s\{[^\}]*\}\})', content, flags=re.DOTALL):
-            items.append(self._parse_message_data_item(m))
-        return SuccessResponse(items)
+        return SuccessResponse()
 
     def parse(self, response: str) -> HoppieResponse:
         """Parse response from API response text
@@ -153,3 +182,83 @@ class HoppieResponseParser(object):
 
     def __repr__(self) -> str:
         return 'HoppieResponseParser()'
+
+class PollResponseParser(HoppieResponseParser):
+    """PollResponseParser()
+    
+    Parser of Hoppie's custom-format data items, encoded in plain text
+    """
+    def _parse_message_data_item(self, content: str) -> dict | None:
+        m = re.match(r'\{([A-Z0-9]+)\s([a-z\s\-]+)\s\{([^\}]*)\}\}', content)
+        from_name = m.group(1)
+        type_name = m.group(2)
+        packet_content = m.group(3)
+        return {
+            'from': from_name,
+            'type': type_name,
+            'packet': packet_content
+        }
+
+    def _parse_success(self, content: str) -> SuccessResponse:
+        msg_data = []
+        for m in re.findall(r'(\{[A-Z0-9]+\s[a-z\s\-]+\s\{[^\}]*\}\})', content, flags=re.DOTALL):
+            msg_data.append(self._parse_message_data_item(m))
+        return PollSuccessResponse(msg_data)
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, PollResponseParser)
+
+    def __repr__(self) -> str:
+        return 'PollResponseParser()'
+
+class PeekResponseParser(HoppieResponseParser):
+    """PeekResponseParser()
+    
+    Parser of Hoppie's custom-format data items, encoded in plain text
+    """
+    def _parse_message_data_item(self, content: str) -> dict | None:
+        m = re.match(r'\{(\d+)\s([A-Z0-9]+)\s([a-z\s\-]+)\s\{([^\}]*)\}\}', content)
+        id = int(m.group(1), base=10)
+        from_name = m.group(2)
+        type_name = m.group(3)
+        packet_content = m.group(4)
+        return {
+            'id': id,
+            'from': from_name,
+            'type': type_name,
+            'packet': packet_content
+        }
+
+    def _parse_success(self, content: str) -> SuccessResponse:
+        msg_data = []
+        for m in re.findall(r'(\{\d+\s[A-Z0-9]+\s[a-z\s\-]+\s\{[^\}]*\}\})', content, flags=re.DOTALL):
+            msg_data.append(self._parse_message_data_item(m))
+        return PeekSuccessResponse(msg_data)
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, PeekResponseParser)
+
+    def __repr__(self) -> str:
+        return 'PeekResponseParser()'
+
+class HoppieResponseParserFactory(object):
+    """HoppieResponseParserFactory()
+
+    Factory class to create the corresponding parser for a given message type
+    """
+    def create_parser(self, request_type: HoppieMessage.MessageType) -> HoppieResponseParser:
+        """Create parser for given request type
+
+        Args:
+            request_type (HoppieMessage.MessageType): Message type of the request
+
+        Returns:
+            HoppieResponseParser: Corresponding parser for request type
+        """
+        match HoppieMessage.MessageType(request_type):
+            case HoppieMessage.MessageType.POLL:
+                return PollResponseParser()
+            case HoppieMessage.MessageType.PEEK:
+                return PeekResponseParser()
+            case _:
+                return HoppieResponseParser()
