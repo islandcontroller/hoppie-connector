@@ -1,5 +1,5 @@
 from .Messages import HoppieMessage, HoppieMessageFactory
-from .Responses import ErrorResponse, SuccessResponse, PeekSuccessResponse, PollSuccessResponse
+from .Responses import ErrorResponse, SuccessResponse, PeekSuccessResponse, PollSuccessResponse, PingSuccessResponse
 from .API import HoppieAPI
 import warnings
 
@@ -72,6 +72,22 @@ class HoppieConnector(object):
             except ValueError as e:
                 warnings.warn(f"Unable to parse {d}: {e}", HoppieWarning)
         return result
+
+    def ping(self, stations: list[str] | str | None = None) -> list[str]:
+        """Check station online status.
+
+        Note:
+            Use `stations='*'` in order to retrieve a list of all currently online stations.
+            An empty argument can serve as a connection check to the API server.
+
+        Args:
+            stations (list[str] | str | None, optional): List of stations to check. Defaults to None.
+
+        Returns:
+            list[str]: List of online stations
+        """
+        response: PingSuccessResponse = self._connect(self._f.create_ping(stations))
+        return response.get_stations()
 
     def send_telex(self, to_name: str, message: str) -> None:
         """Send a freetext message to recipient station.

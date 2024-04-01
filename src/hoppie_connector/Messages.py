@@ -13,6 +13,7 @@ class HoppieMessage(object):
         TELEX = 'telex'
         POLL = 'poll'
         PEEK = 'peek'
+        PING = 'ping'
 
         def __repr__(self) -> str:
             return f"HoppieMessage.MessageType.{self.name}"
@@ -36,7 +37,7 @@ class HoppieMessage(object):
             raise ValueError('Invalid message type')
         elif not self._is_valid_station_name(from_name):
             raise ValueError('Invalid FROM station name')
-        elif not self._is_valid_station_name(to_name) and not to_name == 'ALL-CALLSIGNS':
+        elif not self._is_valid_station_name(to_name):
             raise ValueError('Invalid TO station name')
         else:
             self._from = from_name
@@ -340,6 +341,50 @@ class AdscMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"AdscMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, report_time={self.get_report_time()!r}, position={self.get_position()!r}, altitude={self.get_altitude()!r}, heading={self.get_heading()!r}, remark={self.get_remark()!r})"
 
+class PingMessage(HoppieMessage):
+    """PingMessage([stations])
+
+    Station online check
+    """
+    _PING_MAX_STATION_COUNT: int = 24
+    
+    def __init__(self, from_name=str, stations: list[str] | str | None = None):
+        """Create a ping message.
+
+        A ping message is used to check the online status of a station. A single station or a list of stations can be supplied.
+        To retrieve a list of all online stations, use `stations='*'`.
+
+        Args:
+            from_name (str): Sender station name
+            stations (list[str] | str | None, optional): Station or list of stations to check. Defaults to None.
+        """
+        if stations is None:
+            stations = []
+        elif stations == '*':
+            # Retrieve list of all online stations if left empty
+            stations = ['ALL-CALLSIGNS']
+        else:
+            if isinstance(stations, str):
+                stations = [stations]
+            elif len(stations) > self._PING_MAX_STATION_COUNT:
+                raise ValueError('Too many stations requested')
+            for s in stations:
+                if not self._is_valid_station_name(s):
+                    raise ValueError(f"Invalid station name {s}")
+        super().__init__(from_name, 'SERVER', HoppieMessage.MessageType.PING)
+        self._stations = stations
+
+    def get_stations(self) -> list[str]:
+        """Return list of stations to check
+        """
+        return self._stations
+
+    def get_packet_content(self) -> str:
+        return ' '.join(self.get_stations())
+
+    def __repr__(self) -> str:
+        return f"PingMessage(from_name={self.get_from_name()!r}, stations={self.get_stations()!r})"
+
 class HoppieMessageFactory(object):
     """HoppieMessageFactory(station)
     
@@ -433,6 +478,11 @@ class HoppieMessageFactory(object):
         """Create "poll"-message
         """
         return PollMessage(self._station)
+
+    def create_ping(self, stations: list[str] | str | None = None) -> PingMessage:
+        """Create "ping" message
+        """
+        return PingMessage(self._station, stations)
 
     def create_telex(self, to_name: str, message: str) -> TelexMessage:
         """Create freetext message from user input

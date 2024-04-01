@@ -142,6 +142,34 @@ class PeekSuccessResponse(SuccessResponse):
     def __repr__(self) -> str:
         return f"PeekSuccessResponse(msg_data={self.get_data()!r})"
 
+class PingSuccessResponse(SuccessResponse):
+    """PingSuccessResponse(stations)
+    
+    Success indication issued by the Hoppie API server in response to a ping request
+    """
+    def __init__(self, stations: list[str]):
+        """Create success response
+
+        Args:
+            msg_data (list[dict]): List of message data objects
+        """
+        super().__init__()
+        self._stations = stations
+
+    def get_stations(self) -> list[str]:
+        """Return list of stations
+        """
+        return self._stations
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, PingSuccessResponse) and super().__eq__(__value) and (self.get_stations() == __value.get_stations())
+
+    def __str__(self) -> str:
+        return f"{super().__str__()} {self.get_stations()}"
+
+    def __repr__(self) -> str:
+        return f"PingSuccessResponse(stations={self.get_stations()!r})"
+
 class HoppieResponseParser(object):
     """HoppieResponseParser()
     
@@ -241,6 +269,20 @@ class PeekResponseParser(HoppieResponseParser):
     def __repr__(self) -> str:
         return 'PeekResponseParser()'
 
+class PingResponseParser(HoppieResponseParser):
+    """PingResponseParser()
+    
+    Parser of Hoppie's custom-format data items, encoded in plain text
+    """
+    def _parse_success(self, content: str) -> SuccessResponse:
+        return PingSuccessResponse(re.findall(r'\s?([A-Z0-9]{3,9})', content))
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, PingResponseParser)
+
+    def __repr__(self) -> str:
+        return 'PingResponseParser()'
+
 class HoppieResponseParserFactory(object):
     """HoppieResponseParserFactory()
 
@@ -260,5 +302,7 @@ class HoppieResponseParserFactory(object):
                 return PollResponseParser()
             case HoppieMessage.MessageType.PEEK:
                 return PeekResponseParser()
+            case HoppieMessage.MessageType.PING:
+                return PingResponseParser()
             case _:
                 return HoppieResponseParser()

@@ -1,5 +1,4 @@
-from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, HoppieMessageFactory
-from hoppie_connector.Responses import HoppieResponseParser
+from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, HoppieMessageFactory
 from datetime import datetime, UTC
 import unittest
 
@@ -137,6 +136,25 @@ class TestProgressMessageFactoryFromData(unittest.TestCase):
         self.assertIsNone(actual.get_time_off())
         self.assertIsNone(actual.get_time_on())
         self.assertIsNone(actual.get_eta())
+
+class TestPingMessageFactoryCreate(unittest.TestCase):
+    _EXPECTED_FROM: str = 'OPS'
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieMessageFactory(self._EXPECTED_FROM)
+
+    def test_create_from(self):
+        actual: PingMessage = self._UUT.create_ping()
+        self.assertEqual(self._EXPECTED_FROM, actual.get_from_name())
+
+    def test_create_to(self):
+        actual: PingMessage = self._UUT.create_ping()
+        self.assertEqual('SERVER', actual.get_to_name())
+
+    def test_create_stations(self):
+        actual: PingMessage = self._UUT.create_ping('CALLSIGN')
+        self.assertEqual(['CALLSIGN'], actual.get_stations())
 
 class TestHoppieMessageFactoryComparison(unittest.TestCase):
     def test_same(self):

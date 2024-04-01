@@ -25,9 +25,19 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'SERVER', 'type': 'poll'})
         ])
         
-        expected = expected = [TelexMessage('CALLSIGN', self._STATION, 'MESSAGE')]
+        expected = [TelexMessage('CALLSIGN', self._STATION, 'MESSAGE')]
         actual = HoppieConnector(self._STATION, self._LOGON, self._URL).poll()
         self.assertEqual(expected, actual)
+
+    @responses.activate
+    def test_ping(self):
+        responses.get(self._URL, body='ok {CALLSIGN}', match=[
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'SERVER', 'type': 'ping', 'packet': 'ALL-CALLSIGNS'})
+        ])
+
+        expected = ['CALLSIGN']
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).ping('*')
+        self.assertListEqual(expected, actual)
 
     @responses.activate
     def test_send_telex(self):
