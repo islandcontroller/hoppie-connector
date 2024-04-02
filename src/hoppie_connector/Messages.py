@@ -452,7 +452,7 @@ class HoppieMessageFactory(object):
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
     def _create_adsc_from_data(self, from_name: str, packet: str) -> AdscMessage:
-        m = re.match(r'REPORT\s([A-Z0-9]{3,8})\s(\d{5,6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
+        m = re.match(r'REPORT\s([A-Z0-9]{3,8})\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
         if not m:
             raise ValueError('Invalid ADS-C message format')
 
