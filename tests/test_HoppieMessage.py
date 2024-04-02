@@ -66,3 +66,24 @@ class TestHoppieMessageRepresentation(unittest.TestCase):
         expected = HoppieMessage('CALLSIGN', 'OPS', HoppieMessage.MessageType.TELEX)
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+class TestHoppieMessageType(unittest.TestCase):
+    def test_compare_same(self):
+        value1 = HoppieMessage.MessageType.ADS_C
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_compare_equal_enum(self):
+        value1 = HoppieMessage.MessageType.ADS_C
+        value2 = HoppieMessage.MessageType.ADS_C
+        self.assertEqual(value1, value2)
+
+    def test_compare_equal_str(self):
+        value1 = HoppieMessage.MessageType.ADS_C
+        value2 = 'ads-c'
+        self.assertEqual(value1, value2)
+    
+    def test_repr(self):
+        expected = HoppieMessage.MessageType.ADS_C
+        actual = eval(repr(expected))
+        self.assertEqual(expected, actual)

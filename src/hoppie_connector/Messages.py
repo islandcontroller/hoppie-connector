@@ -7,7 +7,7 @@ class HoppieMessage(object):
     
     Abstract base message object
     """
-    class MessageType(enum.Enum):
+    class MessageType(enum.StrEnum):
         ADS_C = 'ads-c'
         PROGRESS = 'progress'
         TELEX = 'telex'

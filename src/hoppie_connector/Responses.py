@@ -7,7 +7,7 @@ class HoppieResponse(object):
     
     Base response data object.
     """
-    class ResponseCode(enum.Enum):
+    class ResponseCode(enum.StrEnum):
         OK = 'ok'
         ERROR = 'error'
 
