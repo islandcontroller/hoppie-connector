@@ -451,6 +451,22 @@ class HoppieMessageFactory(object):
 
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
+    def _create_adsc_from_data(self, from_name: str, packet: str) -> AdscMessage:
+        m = re.match(r'REPORT\s([A-Z0-9]{3,8})\s(\d{5,6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
+        if not m:
+            raise ValueError('Invalid ADS-C message format')
+
+        callsign = m.group(1)
+        if callsign != from_name:
+            raise ValueError('Report flight number does not match sender station name')
+
+        report_time = datetime.strptime(m.group(2), r'%d%H%M').replace(tzinfo=UTC)
+        position = (float(m.group(3)), float(m.group(4)))
+        altitude = 1.0 * int(m.group(5), base=10)
+        heading = None if m.group(6) is None else 1.0 * int(m.group(6), base=10)
+
+        return AdscMessage(from_name, self._station, report_time, position, altitude, heading)
+
     def create_from_data(self, data: dict) -> HoppieMessage:
         """Create `HoppieMessage` object from API response data
 
@@ -466,6 +482,8 @@ class HoppieMessageFactory(object):
                 return self._create_telex_from_data(from_name, packet)
             case HoppieMessage.MessageType.PROGRESS:
                 return self._create_progress_from_data(from_name, packet)
+            case HoppieMessage.MessageType.ADS_C:
+                return self._create_adsc_from_data(from_name, packet)
             case _:
                 raise ValueError(f"Message type '{type_name}' not yet implemented")
 

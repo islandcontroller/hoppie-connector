@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, HoppieMessageFactory
+from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, AdscMessage, HoppieMessageFactory
 from datetime import datetime, UTC
 import unittest
 
@@ -10,15 +10,16 @@ class TestHoppieMessageFactory(unittest.TestCase):
     def test_create_peek(self):     self.assertIsInstance(self._UUT.create_peek(), PeekMessage)
     def test_create_poll(self):     self.assertIsInstance(self._UUT.create_poll(), PollMessage)
     def test_create_telex(self):    self.assertIsInstance(self._UUT.create_telex('OPS', ''), TelexMessage)
+    def test_create_ping(self):     self.assertIsInstance(self._UUT.create_ping(), PingMessage)
     def test_telex_from_data(self): 
         actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
         self.assertIsInstance(actual, TelexMessage)
     def test_progress_from_data(self): 
         actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'})
         self.assertIsInstance(actual, ProgressMessage)
-    def test_empty_id(self):
-        actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'telex', 'packet': ''})
-        self.assertIsInstance(actual, TelexMessage)
+    def test_adsc_from_data(self):
+        actual = self._UUT.create_from_data({'from': 'CALLSIGN', 'type': 'ads-c', 'packet': 'REPORT CALLSIGN 011820 0.000000 0.000000 0'})
+        self.assertIsInstance(actual, AdscMessage)
 
 class TestHoppieMessageFactoryErrorHandling(unittest.TestCase):
     def setUp(self) -> None:
@@ -155,6 +156,40 @@ class TestPingMessageFactoryCreate(unittest.TestCase):
     def test_create_stations(self):
         actual: PingMessage = self._UUT.create_ping('CALLSIGN')
         self.assertEqual(['CALLSIGN'], actual.get_stations())
+
+class TestAdscMessageFactoryFromData(unittest.TestCase):
+    _PRESET: dict = {'from': 'CALLSIGN', 'type': 'ads-c', 'packet': 'REPORT CALLSIGN 011820 1.000000 2.000000 3'}
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieMessageFactory('OPS')
+        
+    def test_reptime(self):
+        expected = datetime.strptime('011820', r'%d%H%M').replace(tzinfo=UTC)
+        actual: AdscMessage = self._UUT.create_from_data({**self._PRESET})
+        self.assertEqual(expected, actual.get_report_time())
+
+    def test_position(self):
+        expected = (1.0, 2.0)
+        actual: AdscMessage = self._UUT.create_from_data({**self._PRESET})
+        self.assertAlmostEqual(expected[0], actual.get_position()[0])
+        self.assertAlmostEqual(expected[1], actual.get_position()[1])
+
+    def test_altitude(self):
+        expected = 3.0
+        actual: AdscMessage = self._UUT.create_from_data({**self._PRESET})
+        self.assertAlmostEqual(expected, actual.get_altitude())
+
+    def test_heading(self):
+        expected = 40.0
+        actual: AdscMessage = self._UUT.create_from_data({**self._PRESET, 'packet': 'REPORT CALLSIGN 011820 1.000000 2.000000 3 40'})
+        self.assertAlmostEqual(expected, actual.get_heading())
+
+    def test_invalid_fltnum(self):
+        self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 'REPORT INVALID 011820 1.000000 2.000000 3'}))
+
+    def test_missing_fltnum(self):
+        self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 'REPORT 011820 1.000000 2.000000 3'}))
 
 class TestHoppieMessageFactoryComparison(unittest.TestCase):
     def test_same(self):
