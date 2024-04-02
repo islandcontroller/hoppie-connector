@@ -1,6 +1,8 @@
 from .Messages import HoppieMessage, HoppieMessageFactory
-from .Responses import ErrorResponse, SuccessResponse, PeekSuccessResponse, PollSuccessResponse, PingSuccessResponse
+from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .API import HoppieAPI
+from datetime import timedelta
+from typing import TypeVar
 import warnings
 
 class HoppieError(Exception):
@@ -13,6 +15,7 @@ class HoppieConnector(object):
 
     Connector for interacting with Hoppie's ACARS service.
     """
+
     def __init__(self, station_name: str, logon: str, url: str | None = None):
         """Create a new connector
 
@@ -27,13 +30,17 @@ class HoppieConnector(object):
         self._f = HoppieMessageFactory(station_name)
         self._api = HoppieAPI(logon, url)
 
-    def _connect(self, message: HoppieMessage) -> SuccessResponse:
-        response = self._api.connect(message)
+    _T = TypeVar('_T')
+    def _connect(self, message: HoppieMessage, type: _T) -> tuple[_T, timedelta]:
+        response, delay = self._api.connect(message)
         if isinstance(response, ErrorResponse): 
             raise HoppieError(response.get_reason())
-        return response
+        elif isinstance(response, type):
+            return response, delay
+        else:
+            raise TypeError('Response can not be represented by requested target type')
 
-    def peek(self) -> list[tuple[int, HoppieMessage]]:
+    def peek(self) -> tuple[list[tuple[int, HoppieMessage]], timedelta]:
         """Peek all messages destined to own station
 
         Note:
@@ -42,18 +49,18 @@ class HoppieConnector(object):
             to 24 hours.
 
         Returns:
-            list[tuple[int, HoppieMessage]]: List of messages (id, content)
+            tuple[list[tuple[int, HoppieMessage]], timedelta]: List of messages (id, content) and reponse delay
         """
-        response: PeekSuccessResponse = self._connect(self._f.create_peek())
+        response, delay = self._connect(self._f.create_peek(), PeekSuccessResponse)
         result = []
         for d in response.get_data():
             try:
                 result.append((d['id'], self._f.create_from_data(d)))
             except ValueError as e:
                 warnings.warn(f"Unable to parse {d}: {e}", HoppieWarning)
-        return result
+        return result, delay
 
-    def poll(self) -> list[HoppieMessage]:
+    def poll(self) -> tuple[list[HoppieMessage], timedelta]:
         """Poll for new messages destined to own station and mark them as relayed.
 
         Note:
@@ -62,18 +69,18 @@ class HoppieConnector(object):
             not reappear in the next `poll` response.
 
         Returns:
-            list[HoppieMessage]: List of messages
+            tuple[list[HoppieMessage], timedelta]: List of messages and response delay
         """
-        response: PollSuccessResponse = self._connect(self._f.create_poll())
+        response, delay = self._connect(self._f.create_poll(), PollSuccessResponse)
         result = []
         for d in response.get_data():
             try:
                 result.append(self._f.create_from_data(d))
             except ValueError as e:
                 warnings.warn(f"Unable to parse {d}: {e}", HoppieWarning)
-        return result
+        return result, delay
 
-    def ping(self, stations: list[str] | str | None = None) -> list[str]:
+    def ping(self, stations: list[str] | str | None = None) -> tuple[list[str], timedelta]:
         """Check station online status.
 
         Note:
@@ -84,12 +91,12 @@ class HoppieConnector(object):
             stations (list[str] | str | None, optional): List of stations to check. Defaults to None.
 
         Returns:
-            list[str]: List of online stations
+            tuple[list[str], timedelta]: List of online stations and response delay
         """
-        response: PingSuccessResponse = self._connect(self._f.create_ping(stations))
-        return response.get_stations()
+        response, delay = self._connect(self._f.create_ping(stations), PingSuccessResponse)
+        return response.get_stations(), delay
 
-    def send_telex(self, to_name: str, message: str) -> None:
+    def send_telex(self, to_name: str, message: str) -> timedelta:
         """Send a freetext message to recipient station.
 
         Note:
@@ -98,5 +105,8 @@ class HoppieConnector(object):
         Args:
             to_name (str): Recipient station name
             message (str): Message content
+
+        Returns:
+            timedelta: Response delay
         """
-        self._connect(self._f.create_telex(to_name, message))
+        return self._connect(self._f.create_telex(to_name, message), SuccessResponse)[1]

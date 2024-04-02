@@ -1,5 +1,6 @@
 from .Messages import HoppieMessage
 from .Responses import HoppieResponse, HoppieResponseParserFactory
+from datetime import timedelta
 import requests
 
 class HoppieAPI(object):
@@ -19,14 +20,14 @@ class HoppieAPI(object):
         self._url = url if url is not None else self._DEFAULT_URL
         self._logon = logon
 
-    def connect(self, msg: HoppieMessage) -> HoppieResponse:
+    def connect(self, msg: HoppieMessage) -> tuple[HoppieResponse, timedelta]:
         """Issue "connect" call to the API
 
         Args:
             msg (HoppieMessage): Message data
 
         Returns:
-            HoppieResponse: Response data (ASCII string encoding)
+            tuple[HoppieResponse, timedelta]: Response data (ASCII string encoding) and delay
         """
         if not isinstance(msg, HoppieMessage):
             raise ValueError('Invalid input message data type')
@@ -44,7 +45,7 @@ class HoppieAPI(object):
         
         parser = HoppieResponseParserFactory().create_parser(msg.get_msg_type())
         content = response.content.decode('ascii')
-        return parser.parse(content)
+        return (parser.parse(content), response.elapsed)
 
     def __repr__(self) -> str:
         return f"HoppieAPI(logon={self._logon!r}, url={self._url!r})"

@@ -1,6 +1,8 @@
 from hoppie_connector import HoppieConnector, HoppieError, HoppieWarning
 from hoppie_connector.Messages import TelexMessage
+from hoppie_connector.Responses import PingSuccessResponse
 from responses import matchers
+from datetime import timedelta
 import responses
 import unittest
 
@@ -15,9 +17,10 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'SERVER', 'type': 'peek'})
         ])
 
-        expected = [(1, TelexMessage('CALLSIGN', self._STATION, 'MESSAGE'))]
-        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).peek()
-        self.assertListEqual(expected, actual)
+        expected_msg = [(1, TelexMessage('CALLSIGN', self._STATION, 'MESSAGE'))]
+        actual_msg, actual_delay = HoppieConnector(self._STATION, self._LOGON, self._URL).peek()
+        self.assertListEqual(expected_msg, actual_msg)
+        self.assertGreater(actual_delay, timedelta(0))
 
     @responses.activate
     def test_poll(self):
@@ -25,9 +28,10 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'SERVER', 'type': 'poll'})
         ])
         
-        expected = [TelexMessage('CALLSIGN', self._STATION, 'MESSAGE')]
-        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).poll()
-        self.assertEqual(expected, actual)
+        expected_msg = [TelexMessage('CALLSIGN', self._STATION, 'MESSAGE')]
+        actual_msg, actual_delay = HoppieConnector(self._STATION, self._LOGON, self._URL).poll()
+        self.assertListEqual(expected_msg, actual_msg)
+        self.assertGreater(actual_delay, timedelta(0))
 
     @responses.activate
     def test_ping(self):
@@ -35,9 +39,10 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'SERVER', 'type': 'ping', 'packet': 'ALL-CALLSIGNS'})
         ])
 
-        expected = ['CALLSIGN']
-        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).ping('*')
-        self.assertListEqual(expected, actual)
+        expected_msg = ['CALLSIGN']
+        actual_msg, actual_delay = HoppieConnector(self._STATION, self._LOGON, self._URL).ping('*')
+        self.assertListEqual(expected_msg, actual_msg)
+        self.assertGreater(actual_delay, timedelta(0))
 
     @responses.activate
     def test_send_telex(self):
@@ -47,7 +52,16 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': callsign, 'type': 'telex'}),
             matchers.urlencoded_params_matcher({'packet': message})
         ])
-        HoppieConnector(self._STATION, self._LOGON, self._URL).send_telex(callsign, message)
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_telex(callsign, message)
+        self.assertGreater(actual, timedelta(0))
+
+    @responses.activate
+    def test_invalid_connect_type(self):
+        responses.post(self._URL, body='ok {1 CALLSIGN telex {MESSAGE}}')
+
+        m = TelexMessage('CALLSIGN', self._STATION, 'MESSAGE')
+        cnx = HoppieConnector(self._STATION, self._LOGON, self._URL)
+        self.assertRaises(TypeError, lambda: cnx._connect(m, PingSuccessResponse))
 
 class TestHoppieConnectorErrorHandling(unittest.TestCase):
     _URL = 'http://example.com/api'
