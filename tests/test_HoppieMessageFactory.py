@@ -1,5 +1,5 @@
 from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, AdscMessage, HoppieMessageFactory
-from datetime import datetime, UTC
+from datetime import time, datetime, UTC
 import unittest
 
 class TestHoppieMessageFactory(unittest.TestCase):
@@ -69,6 +69,41 @@ class TestTelexMessageFactoryFromData(unittest.TestCase):
 
     def test_oversize_content(self):
         self.assertRaises(ValueError, lambda: self._UUT.create_from_data({**self._PRESET, 'packet': 221*'a'}))
+
+class TestProgressMessageFactoryCreate(unittest.TestCase):
+    _EXPECTED_FROM: str = 'CALLSIGN'
+    
+    def setUp(self) -> None:
+        super().setUp()
+        self._UUT = HoppieMessageFactory(self._EXPECTED_FROM)
+
+    def test_create_from(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0))
+        self.assertEqual(self._EXPECTED_FROM, actual.get_from_name())
+
+    def test_create_to(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0))
+        self.assertEqual('OPS', actual.get_to_name())
+
+    def test_create_time_out(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0))
+        self.assertEqual(time(hour=0), actual.get_time_out())
+
+    def test_create_time_off(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0), time_off=time(hour=1))
+        self.assertEqual(time(hour=1), actual.get_time_off())
+
+    def test_create_time_on(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0), time_off=time(hour=1), time_on=time(hour=2))
+        self.assertEqual(time(hour=2), actual.get_time_on())
+
+    def test_create_time_in(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0), time_off=time(hour=1), time_on=time(hour=2), time_in=time(hour=3))
+        self.assertEqual(time(hour=3), actual.get_time_in())
+
+    def test_create_eta(self):
+        actual: ProgressMessage = self._UUT.create_progress('OPS', 'ZZZZ', 'ZZZZ', time_out=time(hour=0), time_eta=time(hour=1))
+        self.assertEqual(time(hour=1), actual.get_eta())
 
 class TestProgressMessageFactoryFromData(unittest.TestCase):
     _PRESET: dict = {'from': 'CALLSIGN', 'type': 'progress', 'packet': 'ZZZZ/ZZZZ OUT/0000'}

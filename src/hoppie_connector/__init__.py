@@ -1,7 +1,7 @@
 from .Messages import HoppieMessage, HoppieMessageFactory
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .API import HoppieAPI
-from datetime import timedelta
+from datetime import timedelta, time
 from typing import TypeVar
 import warnings
 
@@ -110,3 +110,24 @@ class HoppieConnector(object):
             timedelta: Response delay
         """
         return self._connect(self._f.create_telex(to_name, message), SuccessResponse)[1]
+
+    def send_progress(self, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None) -> timedelta:
+        """Send an OOOI progress report to recipient station
+
+        Note:
+            ETA only available until IN time is specified.
+
+        Args:
+            to_name (str): Recipient station name
+            dep (str): Departure airport ICAO code
+            arr (str): Arrival airport ICAO code
+            time_out (time): OUT time
+            time_eta (time | None, optional): Estimated time of arrival. Defaults to None.
+            time_off (time | None, optional): OFF time. Defaults to None.
+            time_on (time | None, optional): ON time. Defaults to None.
+            time_in (time | None, optional): IN time. Defaults to None.
+
+        Returns:
+            timedelta: Response delay
+        """
+        return self._connect(self._f.create_progress(to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in), SuccessResponse)[1]

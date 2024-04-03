@@ -511,6 +511,21 @@ class HoppieMessageFactory(object):
         """
         return TelexMessage(self._station, to_name, message)
 
+    def create_progress(self, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None) -> ProgressMessage:
+        """Create OOOI progress message from user imput
+
+        Args:
+            to_name (str): Recipient station name
+            dep (str): Departure airport ICAO code
+            arr (str): Arrival airport ICAO code
+            time_out (time): OUT time
+            time_eta (time | None, optional): Estimated time of arrival. Defaults to None.
+            time_off (time | None, optional): OFF time. Defaults to None.
+            time_on (time | None, optional): ON time. Defaults to None.
+            time_in (time | None, optional): IN time. Defaults to None.
+        """
+        return ProgressMessage(self._station, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in)
+
     def __repr__(self) -> str:
         return f"HoppieMessageFactory(station={self._station!r})"
 

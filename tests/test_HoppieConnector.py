@@ -2,7 +2,7 @@ from hoppie_connector import HoppieConnector, HoppieError, HoppieWarning
 from hoppie_connector.Messages import TelexMessage
 from hoppie_connector.Responses import PingSuccessResponse
 from responses import matchers
-from datetime import timedelta
+from datetime import timedelta, time
 import responses
 import unittest
 
@@ -53,6 +53,15 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
             matchers.urlencoded_params_matcher({'packet': message})
         ])
         actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_telex(callsign, message)
+        self.assertGreater(actual, timedelta(0))
+
+    @responses.activate
+    def test_progress(self):
+        responses.get(self._URL, body='ok', match=[
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'OPS', 'type': 'progress', 'packet': 'AAAA/BBBB OUT/1820'})
+        ])
+
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_progress('OPS', 'AAAA', 'BBBB', time(hour=18, minute=20))
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
