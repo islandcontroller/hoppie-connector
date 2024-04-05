@@ -199,11 +199,10 @@ class HoppieResponseParser(object):
             raise ValueError('Invalid response format')
         
         content = m.group(2).strip() if m.group(2) else ''
-        match HoppieResponse.ResponseCode(m.group(1)):
-            case HoppieResponse.ResponseCode.ERROR:
-                return self._parse_error(content)
-            case HoppieResponse.ResponseCode.OK:
-                return self._parse_success(content)
+        if m.group(1) == 'ok':
+            return self._parse_success(content)
+        else:
+            return self._parse_error(content)
 
     def __eq__(self, __value: object) -> bool:
         return isinstance(__value, HoppieResponseParser)

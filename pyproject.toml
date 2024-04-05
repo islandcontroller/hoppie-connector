@@ -49,7 +49,7 @@ Documentation = "https://github.com/islandcontroller/hoppie-connector/wiki/"
 [tool.setuptools_scm]
 
 [tool.pytest.ini_options]
-addopts = "--cov=hoppie_connector --cov-report=xml --cov-fail-under=100"
+addopts = "--cov=hoppie_connector --cov-branch --cov-report=xml --cov-fail-under=100"
 testpaths = ["tests"]
 
 [tool.ruff]
