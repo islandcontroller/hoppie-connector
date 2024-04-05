@@ -1,4 +1,4 @@
-from .Messages import HoppieMessage, HoppieMessageFactory
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .API import HoppieAPI
 from datetime import timedelta, time
@@ -27,7 +27,7 @@ class HoppieConnector(object):
             logon (str): API logon code
             url (str, optional): API URL. Defaults to None.
         """
-        self._f = HoppieMessageFactory(station_name)
+        self._station = station_name
         self._api = HoppieAPI(logon, url)
 
     _T = TypeVar('_T')
@@ -51,11 +51,12 @@ class HoppieConnector(object):
         Returns:
             tuple[list[tuple[int, HoppieMessage]], timedelta]: List of messages (id, content) and reponse delay
         """
-        response, delay = self._connect(self._f.create_peek(), PeekSuccessResponse)
+        response, delay = self._connect(PeekMessage(self._station), PeekSuccessResponse)
         result = []
+        p = HoppieMessageParser(self._station)
         for d in response.get_data():
             try:
-                result.append((d['id'], self._f.create_from_data(d)))
+                result.append((d['id'], p.parse(d)))
             except ValueError as e:
                 warnings.warn(f"Unable to parse {d}: {e}", HoppieWarning)
         return result, delay
@@ -71,11 +72,12 @@ class HoppieConnector(object):
         Returns:
             tuple[list[HoppieMessage], timedelta]: List of messages and response delay
         """
-        response, delay = self._connect(self._f.create_poll(), PollSuccessResponse)
+        response, delay = self._connect(PollMessage(self._station), PollSuccessResponse)
         result = []
+        p = HoppieMessageParser(self._station)
         for d in response.get_data():
             try:
-                result.append(self._f.create_from_data(d))
+                result.append(p.parse(d))
             except ValueError as e:
                 warnings.warn(f"Unable to parse {d}: {e}", HoppieWarning)
         return result, delay
@@ -93,7 +95,7 @@ class HoppieConnector(object):
         Returns:
             tuple[list[str], timedelta]: List of online stations and response delay
         """
-        response, delay = self._connect(self._f.create_ping(stations), PingSuccessResponse)
+        response, delay = self._connect(PingMessage(self._station, stations), PingSuccessResponse)
         return response.get_stations(), delay
 
     def send_telex(self, to_name: str, message: str) -> timedelta:
@@ -109,7 +111,7 @@ class HoppieConnector(object):
         Returns:
             timedelta: Response delay
         """
-        return self._connect(self._f.create_telex(to_name, message), SuccessResponse)[1]
+        return self._connect(TelexMessage(self._station, to_name, message), SuccessResponse)[1]
 
     def send_progress(self, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None) -> timedelta:
         """Send an OOOI progress report to recipient station
@@ -130,4 +132,4 @@ class HoppieConnector(object):
         Returns:
             timedelta: Response delay
         """
-        return self._connect(self._f.create_progress(to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in), SuccessResponse)[1]
+        return self._connect(ProgressMessage(self._station, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in), SuccessResponse)[1]

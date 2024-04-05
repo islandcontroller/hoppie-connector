@@ -385,18 +385,18 @@ class PingMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"PingMessage(from_name={self.get_from_name()!r}, stations={self.get_stations()!r})"
 
-class HoppieMessageFactory(object):
-    """HoppieMessageFactory(station)
+class HoppieMessageParser(object):
+    """HoppieMessageParser(station)
     
-    Factory class for creating `HoppieMessage` objects from data or user input
+    Parser for creating `HoppieMessage` objects from received response data
     """
     def __init__(self, station: str):
         self._station = station
 
-    def _create_telex_from_data(self, from_name: str, packet: str) -> TelexMessage:
+    def _parse_telex(self, from_name: str, packet: str) -> TelexMessage:
         return TelexMessage(from_name, self._station, packet)
 
-    def _create_progress_from_data(self, from_name: str, packet: str) -> ProgressMessage:
+    def _parse_progress(self, from_name: str, packet: str) -> ProgressMessage:
         def _get_aprt(packet: str) -> tuple[str, str] | None:
             m = re.match(r'^([A-Z]{4})\/([A-Z]{4})', packet)
             if not m:
@@ -451,7 +451,7 @@ class HoppieMessageFactory(object):
 
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
-    def _create_adsc_from_data(self, from_name: str, packet: str) -> AdscMessage:
+    def _parse_adsc(self, from_name: str, packet: str) -> AdscMessage:
         m = re.match(r'REPORT\s([A-Z0-9]{3,8})\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
         if not m:
             raise ValueError('Invalid ADS-C message format')
@@ -467,8 +467,8 @@ class HoppieMessageFactory(object):
 
         return AdscMessage(from_name, self._station, report_time, position, altitude, heading)
 
-    def create_from_data(self, data: dict) -> HoppieMessage:
-        """Create `HoppieMessage` object from API response data
+    def parse(self, data: dict) -> HoppieMessage:
+        """Parse `HoppieMessage` object from API response data
 
         Args:
             data (dict): API response data
@@ -479,55 +479,16 @@ class HoppieMessageFactory(object):
 
         match HoppieMessage.MessageType(type_name):
             case HoppieMessage.MessageType.TELEX:
-                return self._create_telex_from_data(from_name, packet)
+                return self._parse_telex(from_name, packet)
             case HoppieMessage.MessageType.PROGRESS:
-                return self._create_progress_from_data(from_name, packet)
+                return self._parse_progress(from_name, packet)
             case HoppieMessage.MessageType.ADS_C:
-                return self._create_adsc_from_data(from_name, packet)
+                return self._parse_adsc(from_name, packet)
             case _:
                 raise ValueError(f"Message type '{type_name}' not yet implemented")
 
-    def create_peek(self) -> PeekMessage:
-        """Create a "peek"-message
-        """
-        return PeekMessage(self._station)
-
-    def create_poll(self) -> PollMessage:
-        """Create "poll"-message
-        """
-        return PollMessage(self._station)
-
-    def create_ping(self, stations: list[str] | str | None = None) -> PingMessage:
-        """Create "ping" message
-        """
-        return PingMessage(self._station, stations)
-
-    def create_telex(self, to_name: str, message: str) -> TelexMessage:
-        """Create freetext message from user input
-
-        Args:
-            to_name (str): Recipient station name
-            message (str): Message content
-        """
-        return TelexMessage(self._station, to_name, message)
-
-    def create_progress(self, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None) -> ProgressMessage:
-        """Create OOOI progress message from user imput
-
-        Args:
-            to_name (str): Recipient station name
-            dep (str): Departure airport ICAO code
-            arr (str): Arrival airport ICAO code
-            time_out (time): OUT time
-            time_eta (time | None, optional): Estimated time of arrival. Defaults to None.
-            time_off (time | None, optional): OFF time. Defaults to None.
-            time_on (time | None, optional): ON time. Defaults to None.
-            time_in (time | None, optional): IN time. Defaults to None.
-        """
-        return ProgressMessage(self._station, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in)
-
     def __repr__(self) -> str:
-        return f"HoppieMessageFactory(station={self._station!r})"
+        return f"HoppieMessageParser(station={self._station!r})"
 
     def __eq__(self, __value: object) -> bool:
-        return isinstance(__value, HoppieMessageFactory) and (self._station == __value._station)
+        return isinstance(__value, HoppieMessageParser) and (self._station == __value._station)
