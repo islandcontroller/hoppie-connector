@@ -56,7 +56,7 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
-    def test_progress(self):
+    def test_send_progress(self):
         responses.get(self._URL, body='ok', match=[
             matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'OPS', 'type': 'progress', 'packet': 'AAAA/BBBB OUT/1820'})
         ])
