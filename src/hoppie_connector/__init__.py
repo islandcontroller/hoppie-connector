@@ -1,7 +1,7 @@
-from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, HoppieMessageParser
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .API import HoppieAPI
-from datetime import timedelta, time
+from datetime import timedelta, time, datetime
 from typing import TypeVar
 import warnings
 
@@ -133,3 +133,19 @@ class HoppieConnector(object):
             timedelta: Response delay
         """
         return self._connect(ProgressMessage(self._station, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in), SuccessResponse)[1]
+
+    def send_adsc(self, to_name: str, report_time: datetime, position: tuple[float, float], altitude: float, heading: float | None = None, remark: str | None = None):
+        """Send an ADS-C position report to recipient station
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            report_time (datetime): Date and time of report
+            position (tuple[float, float]): Position (lat, lon)
+            altitude (float): Altitude in feet
+            heading (float | None, optional): Heading in degrees. Defaults to None.
+
+        Returns:
+            timedelta: Response delay
+        """
+        return self._connect(AdscMessage(self._station, to_name, report_time, position, altitude, heading), SuccessResponse)[1]
