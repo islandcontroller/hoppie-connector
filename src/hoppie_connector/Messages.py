@@ -1,5 +1,6 @@
 import enum
 import re
+from .Utilities import is_valid_station_name, is_valid_airport_code, ICAO_AIRPORT_REGEX, STATION_NAME_REGEX
 from datetime import datetime, time, UTC
 
 class HoppieMessage(object):
@@ -18,9 +19,6 @@ class HoppieMessage(object):
         def __repr__(self) -> str:
             return f"HoppieMessage.MessageType.{self.name}"
 
-    def _is_valid_station_name(self, name: str) -> bool:
-        return bool(re.match(r'^[A-Z0-9]{3,8}$', name))
-
     def __init__(self, from_name: str, to_name: str, type: MessageType):
         """Create base message object
 
@@ -35,9 +33,9 @@ class HoppieMessage(object):
         """
         if not isinstance(type, self.MessageType):
             raise ValueError('Invalid message type')
-        elif not self._is_valid_station_name(from_name):
+        elif not is_valid_station_name(from_name):
             raise ValueError('Invalid FROM station name')
-        elif not self._is_valid_station_name(to_name):
+        elif not is_valid_station_name(to_name):
             raise ValueError('Invalid TO station name')
         else:
             self._from = from_name
@@ -154,10 +152,6 @@ class ProgressMessage(HoppieMessage):
     
     ACARS OOOI (Out-off-on-in) Report
     """
-    @classmethod
-    def _Is_valid_aprt_icao(cls, input: str) -> bool:
-        return bool(re.match(r'^[A-Z]{4}$', input))
-
     def __init__(self, from_name: str, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None):
         """Create a progress message
 
@@ -172,9 +166,9 @@ class ProgressMessage(HoppieMessage):
             time_on (time | None, optional): ON time. Defaults to None.
             time_in (time | None, optional): IN time. Defaults to None.
         """
-        if not self._Is_valid_aprt_icao(dep):
+        if not is_valid_airport_code(dep):
             raise ValueError('Invalid departure identifier')
-        elif not self._Is_valid_aprt_icao(arr):
+        elif not is_valid_airport_code(arr):
             raise ValueError('Invalid arrival identifier')
         elif not time_out:
             raise ValueError('Missing OUT time')
@@ -369,7 +363,7 @@ class PingMessage(HoppieMessage):
             elif len(stations) > self._PING_MAX_STATION_COUNT:
                 raise ValueError('Too many stations requested')
             for s in stations:
-                if not self._is_valid_station_name(s):
+                if not is_valid_station_name(s):
                     raise ValueError(f"Invalid station name {s}")
         super().__init__(from_name, 'SERVER', HoppieMessage.MessageType.PING)
         self._stations = stations
@@ -398,7 +392,7 @@ class HoppieMessageParser(object):
 
     def _parse_progress(self, from_name: str, packet: str) -> ProgressMessage:
         def _get_aprt(packet: str) -> tuple[str, str] | None:
-            m = re.match(r'^([A-Z]{4})\/([A-Z]{4})', packet)
+            m = re.match(r'^(' + ICAO_AIRPORT_REGEX + r')\/(' + ICAO_AIRPORT_REGEX + r')', packet)
             if not m:
                 raise ValueError('Invalid dep/arr value')
             else:
@@ -452,7 +446,7 @@ class HoppieMessageParser(object):
         return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
 
     def _parse_adsc(self, from_name: str, packet: str) -> AdscMessage:
-        m = re.match(r'REPORT\s([A-Z0-9]{3,8})\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
+        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
         if not m:
             raise ValueError('Invalid ADS-C message format')
 
