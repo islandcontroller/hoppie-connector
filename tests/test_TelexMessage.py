@@ -23,3 +23,17 @@ class TestTelexMessageRepresentation(unittest.TestCase):
         expected = TelexMessage('CALLSIGN', 'OPS', 'Message')
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+class TestTelexMessageFromPacket(unittest.TestCase):
+    def test_empty_message(self):
+        expected: str = ''
+        actual: TelexMessage = TelexMessage.from_packet('CALLSIGN', 'OPS', expected)
+        self.assertEqual(expected, actual.get_message())
+
+    def test_valid_message(self):
+        expected: str = 'Message'
+        actual: TelexMessage = TelexMessage.from_packet('CALLSIGN', 'OPS', expected)
+        self.assertEqual(expected, actual.get_message())
+
+    def test_oversize_content(self):
+        self.assertRaises(ValueError, lambda: TelexMessage.from_packet('CALLSIGN', 'OPS', 221*'a'))

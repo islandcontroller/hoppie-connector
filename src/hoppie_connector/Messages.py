@@ -1,7 +1,8 @@
-import enum
-import re
 from .Utilities import is_valid_station_name, is_valid_airport_code, ICAO_AIRPORT_REGEX, STATION_NAME_REGEX
 from datetime import datetime, time, UTC
+from typing import Self
+import enum
+import re
 
 class HoppieMessage(object):
     """HoppieMessage(from_name, to_name, type)
@@ -120,6 +121,17 @@ class TelexMessage(HoppieMessage):
     """
     _TELEX_MAX_MSG_LEN: int = 220
 
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
+        """Parse freetext message from packet string
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            packet (str): Packet string
+        """
+        return TelexMessage(from_name, to_name, packet)
+
     def __init__(self, from_name: str, to_name: str, message: str):
         """Create a freetext message
 
@@ -152,6 +164,70 @@ class ProgressMessage(HoppieMessage):
     
     ACARS OOOI (Out-off-on-in) Report
     """
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
+        """Parse progress message from packet string
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            packet (str): Packet string
+        """
+        def _get_aprt(packet: str) -> tuple[str, str] | None:
+            m = re.match(r'^(' + ICAO_AIRPORT_REGEX + r')\/(' + ICAO_AIRPORT_REGEX + r')', packet)
+            if not m:
+                raise ValueError('Invalid dep/arr value')
+            else:
+                return m.group(1), m.group(2)
+
+        def _get_time(timestr: str) -> time:
+            return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).timetz()
+
+        def _get_time_out(packet: str) -> time | None:
+            m = re.search(r'OUT\/(\d{4})Z?', packet)
+            if not m:
+                raise ValueError('Invalid OUT value')
+            else:
+                return _get_time(m.group(1))
+
+        def _get_time_off(packet: str) -> time | None:
+            m = re.search(r'OFF\/(\d{4})Z?', packet)
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
+
+        def _get_eta(packet: str) -> time | None:
+            m = re.search(r'ETA\/(\d{4})Z?', packet)
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
+
+        def _get_time_on(packet: str) -> time | None:
+            m = re.search(r'ON\/(\d{4})Z?', packet)
+            if not m:
+                return None
+            else: 
+                return _get_time(m.group(1))
+
+        def _get_time_in(packet: str) -> time | None:
+            m = re.search(r'IN\/(\d{4})Z?', packet)
+            if not m:
+                return None
+            else:
+                return _get_time(m.group(1))
+
+        dep, arr = _get_aprt(packet)
+        time_out = _get_time_out(packet)
+        time_off = _get_time_off(packet)
+        time_on = _get_time_on(packet)
+        time_in = _get_time_in(packet)
+        time_eta = _get_eta(packet)
+
+        return ProgressMessage(from_name, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in)
+
     def __init__(self, from_name: str, to_name: str, dep: str, arr: str, time_out: time, time_eta: time | None = None, time_off: time | None = None, time_on: time | None = None, time_in: time | None = None):
         """Create a progress message
 
@@ -251,6 +327,31 @@ class AdscMessage(HoppieMessage):
     
     ADC-C Position Report
     """
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
+        """Parse ADS-C position report from packet string
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipipent station name
+            packet (str): Packet string
+        """
+        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
+        if not m:
+            raise ValueError('Invalid ADS-C message format')
+
+        callsign = m.group(1)
+        if callsign != from_name:
+            raise ValueError('Report flight number does not match sender station name')
+
+        report_time = datetime.strptime(m.group(2), r'%d%H%M').replace(tzinfo=UTC)
+        position = (float(m.group(3)), float(m.group(4)))
+        altitude = 1.0 * int(m.group(5), base=10)
+        heading = None if m.group(6) is None else 1.0 * int(m.group(6), base=10)
+
+        return AdscMessage(from_name, to_name, report_time, position, altitude, heading)
+
     def __init__(self, from_name: str, to_name: str, report_time: datetime, position: tuple[float, float], altitude: float, heading: float | None = None, remark: str | None = None):
         """Create ADS-C position report
 
@@ -387,80 +488,6 @@ class HoppieMessageParser(object):
     def __init__(self, station: str):
         self._station = station
 
-    def _parse_telex(self, from_name: str, packet: str) -> TelexMessage:
-        return TelexMessage(from_name, self._station, packet)
-
-    def _parse_progress(self, from_name: str, packet: str) -> ProgressMessage:
-        def _get_aprt(packet: str) -> tuple[str, str] | None:
-            m = re.match(r'^(' + ICAO_AIRPORT_REGEX + r')\/(' + ICAO_AIRPORT_REGEX + r')', packet)
-            if not m:
-                raise ValueError('Invalid dep/arr value')
-            else:
-                return m.group(1), m.group(2)
-
-        def _get_time(timestr: str) -> time:
-            return datetime.strptime(timestr, '%H%M').replace(tzinfo=UTC).timetz()
-
-        def _get_time_out(packet: str) -> time | None:
-            m = re.search(r'OUT\/(\d{4})Z?', packet)
-            if not m:
-                raise ValueError('Invalid OUT value')
-            else:
-                return _get_time(m.group(1))
-
-        def _get_time_off(packet: str) -> time | None:
-            m = re.search(r'OFF\/(\d{4})Z?', packet)
-            if not m:
-                return None
-            else:
-                return _get_time(m.group(1))
-
-        def _get_eta(packet: str) -> time | None:
-            m = re.search(r'ETA\/(\d{4})Z?', packet)
-            if not m:
-                return None
-            else:
-                return _get_time(m.group(1))
-
-        def _get_time_on(packet: str) -> time | None:
-            m = re.search(r'ON\/(\d{4})Z?', packet)
-            if not m:
-                return None
-            else: 
-                return _get_time(m.group(1))
-
-        def _get_time_in(packet: str) -> time | None:
-            m = re.search(r'IN\/(\d{4})Z?', packet)
-            if not m:
-                return None
-            else:
-                return _get_time(m.group(1))
-
-        dep, arr = _get_aprt(packet)
-        time_out = _get_time_out(packet)
-        time_off = _get_time_off(packet)
-        time_on = _get_time_on(packet)
-        time_in = _get_time_in(packet)
-        time_eta = _get_eta(packet)
-
-        return ProgressMessage(from_name, self._station, dep, arr, time_out, time_eta, time_off, time_on, time_in)
-
-    def _parse_adsc(self, from_name: str, packet: str) -> AdscMessage:
-        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
-        if not m:
-            raise ValueError('Invalid ADS-C message format')
-
-        callsign = m.group(1)
-        if callsign != from_name:
-            raise ValueError('Report flight number does not match sender station name')
-
-        report_time = datetime.strptime(m.group(2), r'%d%H%M').replace(tzinfo=UTC)
-        position = (float(m.group(3)), float(m.group(4)))
-        altitude = 1.0 * int(m.group(5), base=10)
-        heading = None if m.group(6) is None else 1.0 * int(m.group(6), base=10)
-
-        return AdscMessage(from_name, self._station, report_time, position, altitude, heading)
-
     def parse(self, data: dict) -> HoppieMessage:
         """Parse `HoppieMessage` object from API response data
 
@@ -473,11 +500,11 @@ class HoppieMessageParser(object):
 
         match HoppieMessage.MessageType(type_name):
             case HoppieMessage.MessageType.TELEX:
-                return self._parse_telex(from_name, packet)
+                return TelexMessage.from_packet(from_name, self._station, packet)
             case HoppieMessage.MessageType.PROGRESS:
-                return self._parse_progress(from_name, packet)
+                return ProgressMessage.from_packet(from_name, self._station, packet)
             case HoppieMessage.MessageType.ADS_C:
-                return self._parse_adsc(from_name, packet)
+                return AdscMessage.from_packet(from_name, self._station, packet)
             case _:
                 raise ValueError(f"Message type '{type_name}' not yet implemented")
 

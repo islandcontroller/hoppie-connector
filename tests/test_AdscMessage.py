@@ -93,3 +93,33 @@ class TestAdscMessageRepresentation(unittest.TestCase):
         expected = AdscMessage('CALLSIGN', 'OPS', datetime.datetime(2000, 1, 1, 18, 20, 00), (1.0, 2.0), 10.0, 180.0)
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+class TestAdscMessageFromPacket(unittest.TestCase):
+    _PACKET: str = 'REPORT CALLSIGN 011820 1.000000 2.000000 3'
+
+    def test_reptime(self):
+        expected = datetime.datetime.strptime('011820', r'%d%H%M').replace(tzinfo=datetime.UTC)
+        actual = AdscMessage.from_packet('CALLSIGN', 'OPS', self._PACKET)
+        self.assertEqual(expected, actual.get_report_time())
+
+    def test_position(self):
+        expected = (1.0, 2.0)
+        actual = AdscMessage.from_packet('CALLSIGN', 'OPS', self._PACKET)
+        self.assertAlmostEqual(expected[0], actual.get_position()[0])
+        self.assertAlmostEqual(expected[1], actual.get_position()[1])
+
+    def test_altitude(self):
+        expected = 3.0
+        actual = AdscMessage.from_packet('CALLSIGN', 'OPS', self._PACKET)
+        self.assertAlmostEqual(expected, actual.get_altitude())
+
+    def test_heading(self):
+        expected = 40.0
+        actual = AdscMessage.from_packet('CALLSIGN', 'OPS', 'REPORT CALLSIGN 011820 1.000000 2.000000 3 40')
+        self.assertAlmostEqual(expected, actual.get_heading())
+
+    def test_invalid_fltnum(self):
+        self.assertRaises(ValueError, lambda: AdscMessage.from_packet('CALLSIGN', 'OPS', 'REPORT INVALID 011820 1.000000 2.000000 3'))
+
+    def test_missing_fltnum(self):
+        self.assertRaises(ValueError, lambda: AdscMessage.from_packet('CALLSIGN', 'OPS', 'REPORT 011820 1.000000 2.000000 3'))
