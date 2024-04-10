@@ -1,7 +1,8 @@
-from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscMessage, HoppieMessageParser
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscPeriodicReportMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
+from .ADSC import AdscData
 from .API import HoppieAPI
-from datetime import timedelta, time, datetime
+from datetime import timedelta, time
 from typing import TypeVar
 import warnings
 
@@ -134,18 +135,26 @@ class HoppieConnector(object):
         """
         return self._connect(ProgressMessage(self._station, to_name, dep, arr, time_out, time_eta, time_off, time_on, time_in), SuccessResponse)[1]
 
-    def send_adsc(self, to_name: str, report_time: datetime, position: tuple[float, float], altitude: float, heading: float | None = None, remark: str | None = None):
-        """Send an ADS-C position report to recipient station
+    def send_adsc_periodic_request(self, to_name: str, interval: int) -> timedelta:
+        """Send an ADS-C Periodic Contract Request to recipient station
 
         Args:
-            from_name (str): Sender station name
             to_name (str): Recipient station name
-            report_time (datetime): Date and time of report
-            position (tuple[float, float]): Position (lat, lon)
-            altitude (float): Altitude in feet
-            heading (float | None, optional): Heading in degrees. Defaults to None.
+            interval (int): Reporting interval in seconds (0 = Demand Contract Request)
 
         Returns:
             timedelta: Response delay
         """
-        return self._connect(AdscMessage(self._station, to_name, report_time, position, altitude, heading), SuccessResponse)[1]
+        return self._connect(AdscPeriodicContractRequestMessage(self._station, to_name, interval), SuccessResponse)[1]
+
+    def send_adsc_periodic_report(self, to_name: str, data: AdscData) -> timedelta:
+        """Send an ADS-C Periodic Report message to recipient station
+
+        Args:
+            to_name (str): Recipient station name
+            data (AdscData): Report data
+
+        Returns:
+            timedelta: Response delay
+        """
+        return self._connect(AdscPeriodicReportMessage(self._station, to_name, data), SuccessResponse)[1]

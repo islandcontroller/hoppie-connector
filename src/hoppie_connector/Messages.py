@@ -1,4 +1,5 @@
-from .Utilities import is_valid_station_name, is_valid_airport_code, ICAO_AIRPORT_REGEX, STATION_NAME_REGEX
+from .ADSC import AdscData, BasicGroup, FlightIdentGroup, EarthRefGroup, MeteoGroup
+from .Utilities import is_valid_station_name, is_valid_airport_code, get_fixed_width_float_str, ICAO_AIRPORT_REGEX, STATION_NAME_REGEX
 from datetime import datetime, time, UTC
 from typing import Self
 import enum
@@ -322,119 +323,188 @@ class ProgressMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"ProgressMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, dep={self.get_departure()!r}, arr={self.get_arrival()!r}, time_out={self.get_time_out()!r}, time_eta={self.get_eta()!r}, time_off={self.get_time_off()!r}, time_on={self.get_time_on()!r}, time_in={self.get_time_in()!r})"
 
-class AdscMessage(HoppieMessage):
-    """AdscMessage(from_name, to_name, report_time, posotion, altitude[, heading[, remark]])
+class AdscContractRequestMessage(HoppieMessage):
+    """AdscContractRequestMessage(from_name, to_name, type)
     
-    ADC-C Position Report
+    ADS-C Surveillance Contract Request message base class
+    """
+    
+    class ContractType(enum.StrEnum):
+        PERIODIC = 'PERIODIC'
+
+    def __init__(self, from_name: str, to_name: str, type: ContractType):
+        """Create base Surveillance Contract Request message
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            type (ContractType): Contract type
+        """
+        super().__init__(from_name, to_name, HoppieMessage.MessageType.ADS_C)
+        self._type = type
+
+    def get_contract_type(self) -> ContractType:
+        """Return contract type
+        """
+        return self._type
+
+    def __repr__(self) -> str:
+        return f"AdscContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, type={self.get_contract_type()!r})"
+
+class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
+    """AdscPeriodicContractRequestMessage(from_name, to_name, interval)
+
+    ADS-C Periodic Contract Request message
     """
 
     @classmethod
     def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
-        """Parse ADS-C position report from packet string
+        """Parse Periodic Contract Request message from packet string
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            packet (str): Packet string
+        """
+        m = re.match(r'REQUEST\sPERIODIC\s(\d+)', packet)
+        if not m:
+            raise ValueError('Invalid ADS-C contract request format')
+        
+        interval = int(m.group(1), base=10)
+        return AdscPeriodicContractRequestMessage(from_name, to_name, interval)
+
+    def __init__(self, from_name: str, to_name: str, interval: int):
+        """Create Periodic Contract Request message
+
+        Note:
+            Reporting interval should be greater than minimum polling interval.
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            interval (int): Reporting interval in seconds (0 = Demand Contract Request)
+        """
+        if interval < 0:
+            raise ValueError('Report interval must be a positive integer')
+        super().__init__(from_name, to_name, AdscContractRequestMessage.ContractType.PERIODIC)
+        self._interval = interval
+
+    def is_demand_contract_request(self) -> bool:
+        """Check if this request is a Demand Contract Request
+
+        Note:
+            Interval value returned by `get_interval()` should be ignored for Demand Contract Requests.
+        """
+        return self._interval == 0
+
+    def get_interval(self) -> int:
+        """Return reporting interval in unit of seconds
+
+        Note:
+            Value must be ignored for Demand Contract Requests. See: `is_demand_contract_request()`.
+            In general, the reporting intervall should not be shorter than the minimum polling interval.
+        """
+        return self._interval
+
+    def get_packet_content(self) -> str:
+        return f"REQUEST PERIODIC {self.get_interval():0d}"
+
+    def __repr__(self) -> str:
+        return f"AdscPeriodicContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, interval={self.get_interval()!r})"
+
+class AdscPeriodicReportMessage(HoppieMessage):
+    """AdscPeriodicReportMessage(from_name, to_name, data)
+    
+    ADC-C Periodic Report message
+    """
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
+        """Parse ADS-C periodic report from packet string
 
         Args:
             from_name (str): Sender station name
             to_name (str): Recipipent station name
             packet (str): Packet string
         """
-        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,3})(?:\s(\d{1,3}))?', packet)
+        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,5})' + \
+                     r'(?:\s(\d{3})\s(\d{1,3})' + \
+                        r'(?:\s(\d{3})\/(\d{1,3})\s(\-?\d{1,3})' + \
+                            r'(?:\s(DES|LVL|CLB))?' + \
+                        r')?' + \
+                     r')?', 
+                     packet)
         if not m:
-            raise ValueError('Invalid ADS-C message format')
+            raise ValueError('Invalid ADS-C Periodic Report message format')
 
-        callsign = m.group(1)
-        if callsign != from_name:
-            raise ValueError('Report flight number does not match sender station name')
+        # Parse fields and create groups
+        acft_ident = m.group(1)
+        flight_ident_group = FlightIdentGroup(acft_ident)
 
-        report_time = datetime.strptime(m.group(2), r'%d%H%M').replace(tzinfo=UTC)
+        timestamp = datetime.strptime(m.group(2), r'%d%H%M').replace(tzinfo=UTC)
         position = (float(m.group(3)), float(m.group(4)))
         altitude = 1.0 * int(m.group(5), base=10)
-        heading = None if m.group(6) is None else 1.0 * int(m.group(6), base=10)
+        basic_group = BasicGroup(timestamp, position, altitude)
 
-        return AdscMessage(from_name, to_name, report_time, position, altitude, heading)
+        meteo_group = None
+        earth_ref_group = None
 
-    def __init__(self, from_name: str, to_name: str, report_time: datetime, position: tuple[float, float], altitude: float, heading: float | None = None, remark: str | None = None):
-        """Create ADS-C position report
+        if (m.group(6) is not None) and (m.group(7) is not None):
+            true_track = 1.0 * int(m.group(6), base=10)
+            ground_speed = 1.0 * int(m.group(7), base=10)
+            earth_ref_group = EarthRefGroup(true_track, ground_speed, None)
+
+            if (m.group(8) is not None) and (m.group(9) is not None) and (m.group(10) is not None):
+                wind_dir = 1.0 * int(m.group(8), base=10)
+                wind_spd = 1.0 * int(m.group(9), base=10)
+                temperature = 1.0 * int(m.group(10), base=10)
+                meteo_group = MeteoGroup((wind_dir, wind_spd), temperature)
+
+                if m.group(11) is not None:
+                    vertical_rate = m.group(11)
+                    earth_ref_group.vertical_rate = vertical_rate
+
+        data = AdscData(basic_group, flight_ident_group, earth_ref_group, meteo_group)
+        return AdscPeriodicReportMessage(from_name, to_name, data)
+
+    def __init__(self, from_name: str, to_name: str, data: AdscData):
+        """Create ADS-C Periodic Report message
 
         Args:
             from_name (str): Sender station name
             to_name (str): Recipient station name
-            report_time (datetime): Date and time of report
-            position (tuple[float, float]): Position (lat, lon)
-            altitude (float): Altitude in feet
-            heading (float | None, optional): Heading in degrees. Defaults to None.
-            remark (str | None, optional): Remark text. Defaults to None.
+            data (AdscGroupCollection): ADS-C data groups
         """
-        if position[0] < -90.0 or position[0] > 90.0:
-            raise ValueError('Latitude out of range')
-        elif position[1] < -180.0 or position[1] > 180.0:
-            raise ValueError('Longitude out of range')
-        elif altitude < -1000.0 or altitude > 66000.0:
-            raise ValueError('Altitude out of range')
-        elif heading and (heading < 0.0 or heading > 360.0):
-            raise ValueError('Heading out of range')
-        elif remark:
-            raise NotImplementedError('Remark field not yet implemented')
-        else:
-            super().__init__(from_name, to_name, self.MessageType.ADS_C)
-            self._time = report_time
-            self._position = position
-            self._altitude = altitude
-            self._heading = heading
+        super().__init__(from_name, to_name, self.MessageType.ADS_C)
+        self._data = data
 
-    def get_report_time(self) -> datetime:
-        """Return time and day(!) of report
+    def get_data(self) -> AdscData:
+        """Return ADS-C group data
 
         Note:
-            Month and year information must be ignored for received messages
+            Month and year information of BasicGroup must be ignored
         """
-        return self._time
-
-    def get_position(self) -> tuple[float, float]:
-        """Return position information (lat, lon)
-        """
-        return self._position
-
-    def get_altitude(self) -> float:
-        """Return altitude information (feet)
-        """
-        return self._altitude
-
-    def get_heading(self) -> float | None:
-        """Return heading information
-        """
-        return self._heading
-
-    def get_remark(self) -> str | None:
-        """Return remark section contents
-        """
-        return None
+        return self._data
 
     def get_packet_content(self) -> str:
-        def _coord_to_string(coord: float) -> str:
-            # Extra space for negative numbers
-            leading = 1 if coord < 0 else 0
-            if abs(coord) < 10:
-                # Single leading digit
-                leading += 1
-            elif abs(coord) < 100:
-                # Two leading digits
-                leading += 2
-            else:
-                # Three leading digits
-                leading += 3
-            return f"{coord:{leading}.{7-leading}f}"
-
-        packet = f"REPORT {self.get_from_name()}" \
-                 f" {self._time.astimezone(UTC):%d%H%M}" \
-                 f" {_coord_to_string(self._position[0])}" \
-                 f" {_coord_to_string(self._position[1])}" \
-                 f" {(self._altitude):.0f}"
-        if self._heading:
-            packet += f" {self._heading:.0f}"
+        # REPORT <acft_ident> <timestamp> <latitude> <longitude> <altitude> [<true_track> <ground_speed> [<wind_dir/wind_speed> <temperature> [<vertical_rate>]]]
+        packet = f"REPORT {self._data.flight_ident.acft_ident}" \
+                 f" {self._data.basic.timestamp.astimezone(UTC):%d%H%M}" \
+                 f" {get_fixed_width_float_str(self._data.basic.position[0], 8)}" \
+                 f" {get_fixed_width_float_str(self._data.basic.position[1], 8)}" \
+                 f" {(self._data.basic.altitude):.0f}"
+        if self._data.earth_ref is not None:
+            packet += f" {self._data.earth_ref.true_track:03.0f}" \
+                      f" {self._data.earth_ref.ground_speed:.0f}"
+            if self._data.meteo is not None:
+                packet += f" {self._data.meteo.wind[0]:03.0f}/{self._data.meteo.wind[1]:.0f}" \
+                          f" {self._data.meteo.temperature:.0f}"
+                if self._data.earth_ref.vertical_rate is not None:
+                    packet += f" {self._data.earth_ref.vertical_rate}"
         return packet
 
     def __repr__(self) -> str:
-        return f"AdscMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, report_time={self.get_report_time()!r}, position={self.get_position()!r}, altitude={self.get_altitude()!r}, heading={self.get_heading()!r}, remark={self.get_remark()!r})"
+        return f"AdscPeriodicReportMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, data={self.get_data()!r})"
 
 class PingMessage(HoppieMessage):
     """PingMessage([stations])
@@ -480,12 +550,44 @@ class PingMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"PingMessage(from_name={self.get_from_name()!r}, stations={self.get_stations()!r})"
 
+class AdscMessageParser(object):
+    """AdscMessageParser()
+    
+    Pre-processing parser for received ADS-C data.
+    """
+    @classmethod
+    def from_packet(cls, from_name, to_name, packet) -> HoppieMessage:
+        """Parse ADS-C message from data
+
+        Note:
+            Delegates parsing to specific message class.
+
+        Args:
+            from_name (_type_): Sender station name
+            to_name (_type_): Recipient station name
+            packet (_type_): Packet string
+
+        Returns:
+            HoppieMessage: Parsed message object
+        """
+        if re.match(r'REQUEST\sPERIODIC.*', packet) is not None:
+            return AdscPeriodicContractRequestMessage.from_packet(from_name, to_name, packet)
+        elif re.match(r'REPORT.*', packet) is not None:
+            return AdscPeriodicReportMessage.from_packet(from_name, to_name, packet)
+        else:
+            raise ValueError('Unknown ADS-C message format')
+
 class HoppieMessageParser(object):
     """HoppieMessageParser(station)
     
     Parser for creating `HoppieMessage` objects from received response data
     """
     def __init__(self, station: str):
+        """Instantiate message parser
+
+        Args:
+            station (str): Recipient station name
+        """
         self._station = station
 
     def parse(self, data: dict) -> HoppieMessage:
@@ -504,7 +606,7 @@ class HoppieMessageParser(object):
             case HoppieMessage.MessageType.PROGRESS:
                 return ProgressMessage.from_packet(from_name, self._station, packet)
             case HoppieMessage.MessageType.ADS_C:
-                return AdscMessage.from_packet(from_name, self._station, packet)
+                return AdscMessageParser.from_packet(from_name, self._station, packet)
             case _:
                 raise ValueError(f"Message type '{type_name}' not yet implemented")
 

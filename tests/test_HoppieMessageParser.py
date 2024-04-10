@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, AdscMessage, HoppieMessageParser
+from hoppie_connector.Messages import PeekMessage, PollMessage, TelexMessage, ProgressMessage, PingMessage, AdscPeriodicReportMessage, HoppieMessageParser
 from datetime import datetime, UTC
 import unittest
 
@@ -15,7 +15,7 @@ class TestHoppieMessageParser(unittest.TestCase):
         self.assertIsInstance(actual, ProgressMessage)
     def test_parse_adsc(self):
         actual = self._UUT.parse({'from': 'CALLSIGN', 'type': 'ads-c', 'packet': 'REPORT CALLSIGN 011820 0.000000 0.000000 0'})
-        self.assertIsInstance(actual, AdscMessage)
+        self.assertIsInstance(actual, AdscPeriodicReportMessage)
 
 class TestHoppieMessageParserErrorHandling(unittest.TestCase):
     def setUp(self) -> None:
