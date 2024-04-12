@@ -332,24 +332,27 @@ class AdscContractRequestMessage(HoppieMessage):
     class ContractType(enum.StrEnum):
         PERIODIC = 'PERIODIC'
 
-    def __init__(self, from_name: str, to_name: str, type: ContractType):
+        def __repr__(self) -> str:
+            return f"AdscContractRequestMessage.ContractType({self.name!r})"
+
+    def __init__(self, from_name: str, to_name: str, contract_type: ContractType):
         """Create base Surveillance Contract Request message
 
         Args:
             from_name (str): Sender station name
             to_name (str): Recipient station name
-            type (ContractType): Contract type
+            contract_type (ContractType): Contract type
         """
         super().__init__(from_name, to_name, HoppieMessage.MessageType.ADS_C)
-        self._type = type
+        self._contract_type = contract_type
 
     def get_contract_type(self) -> ContractType:
         """Return contract type
         """
-        return self._type
+        return self._contract_type
 
     def __repr__(self) -> str:
-        return f"AdscContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, type={self.get_contract_type()!r})"
+        return f"AdscContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, contract_type={self.get_contract_type()!r})"
 
 class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
     """AdscPeriodicContractRequestMessage(from_name, to_name, interval)
