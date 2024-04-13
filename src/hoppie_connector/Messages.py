@@ -323,41 +323,50 @@ class ProgressMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"ProgressMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, dep={self.get_departure()!r}, arr={self.get_arrival()!r}, time_out={self.get_time_out()!r}, time_eta={self.get_eta()!r}, time_off={self.get_time_off()!r}, time_on={self.get_time_on()!r}, time_in={self.get_time_in()!r})"
 
-class AdscContractRequestMessage(HoppieMessage):
-    """AdscContractRequestMessage(from_name, to_name, type)
+class AdscMessage(HoppieMessage):
+    """AdscMessage(from_name, to_name, adsc_msg_type)
     
-    ADS-C Surveillance Contract Request message base class
+    ADS-C message base class
     """
     
-    class ContractType(enum.StrEnum):
-        PERIODIC = 'PERIODIC'
+    class AdscMessageType(enum.StrEnum):
+        REQUEST_PERIODIC = 'REQUEST PERIODIC'
+        REPORT_PERIODIC = 'REPORT'
 
         def __repr__(self) -> str:
-            return f"AdscContractRequestMessage.ContractType({self.name!r})"
+            return f"AdscMessage.AdscMessageType({self.value!r})"
 
-    def __init__(self, from_name: str, to_name: str, contract_type: ContractType):
+    def __init__(self, from_name: str, to_name: str, adsc_msg_type: AdscMessageType):
         """Create base Surveillance Contract Request message
 
         Args:
             from_name (str): Sender station name
             to_name (str): Recipient station name
-            contract_type (ContractType): Contract type
+            adsc_msg_type (AdscMessageType): ADS-C message subtype
         """
         super().__init__(from_name, to_name, HoppieMessage.MessageType.ADS_C)
-        self._contract_type = contract_type
+        self._adsc_msg_type = adsc_msg_type
 
-    def get_contract_type(self) -> ContractType:
-        """Return contract type
+    def get_adsc_msg_type(self) -> AdscMessageType:
+        """Return message subtype
         """
-        return self._contract_type
+        return self._adsc_msg_type
+    
+    def get_adsc_data_packet(self) -> str:
+        """Get encoded ADS-C data part of the packet
+        """
+        return ''
+
+    def get_packet_content(self) -> str:
+        return self.get_adsc_msg_type() + (f" {self.get_adsc_data_packet()}" if len(self.get_adsc_data_packet()) > 0 else '')
 
     def __repr__(self) -> str:
-        return f"AdscContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, contract_type={self.get_contract_type()!r})"
+        return f"AdscMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, adsc_msg_type={self.get_adsc_msg_type()!r})"
 
     def __eq__(self, __value: object) -> bool:
-        return super().__eq__(__value) and isinstance(__value, AdscContractRequestMessage) and (__value.get_contract_type() == self.get_contract_type())
+        return super().__eq__(__value) and isinstance(__value, AdscMessage) and (__value.get_adsc_msg_type() == self.get_adsc_msg_type())
 
-class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
+class AdscPeriodicContractRequestMessage(AdscMessage):
     """AdscPeriodicContractRequestMessage(from_name, to_name, interval)
 
     ADS-C Periodic Contract Request message
@@ -392,7 +401,7 @@ class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
         """
         if interval < 0:
             raise ValueError('Report interval must be a positive integer')
-        super().__init__(from_name, to_name, AdscContractRequestMessage.ContractType.PERIODIC)
+        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.REQUEST_PERIODIC)
         self._interval = interval
 
     def is_demand_contract_request(self) -> bool:
@@ -412,8 +421,8 @@ class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
         """
         return self._interval
 
-    def get_packet_content(self) -> str:
-        return f"REQUEST PERIODIC {self.get_interval():0d}"
+    def get_adsc_data_packet(self) -> str:
+        return f"{self.get_interval():0d}"
 
     def __repr__(self) -> str:
         return f"AdscPeriodicContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, interval={self.get_interval()!r})"
@@ -421,7 +430,7 @@ class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
     def __eq__(self, __value: object) -> bool:
         return super().__eq__(__value) and isinstance(__value, AdscPeriodicContractRequestMessage) and (__value.get_interval() == self.get_interval())
 
-class AdscPeriodicReportMessage(HoppieMessage):
+class AdscPeriodicReportMessage(AdscMessage):
     """AdscPeriodicReportMessage(from_name, to_name, data)
     
     ADC-C Periodic Report message
@@ -484,7 +493,7 @@ class AdscPeriodicReportMessage(HoppieMessage):
             to_name (str): Recipient station name
             data (AdscGroupCollection): ADS-C data groups
         """
-        super().__init__(from_name, to_name, self.MessageType.ADS_C)
+        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.REPORT_PERIODIC)
         self._data = data
 
     def get_data(self) -> AdscData:
@@ -495,9 +504,9 @@ class AdscPeriodicReportMessage(HoppieMessage):
         """
         return self._data
 
-    def get_packet_content(self) -> str:
+    def get_adsc_data_packet(self) -> str:
         # REPORT <acft_ident> <timestamp> <latitude> <longitude> <altitude> [<true_track> <ground_speed> [<wind_dir/wind_speed> <temperature> [<vertical_rate>]]]
-        packet = f"REPORT {self._data.flight_ident.acft_ident}" \
+        packet = f"{self._data.flight_ident.acft_ident}" \
                  f" {self._data.basic.timestamp.astimezone(UTC):%d%H%M}" \
                  f" {get_fixed_width_float_str(self._data.basic.position[0], 8)}" \
                  f" {get_fixed_width_float_str(self._data.basic.position[1], 8)}" \
@@ -582,9 +591,9 @@ class AdscMessageParser(object):
         Returns:
             HoppieMessage: Parsed message object
         """
-        if re.match(r'REQUEST\sPERIODIC.*', packet) is not None:
+        if re.match(r'^REQUEST\sPERIODIC\s\d+$', packet) is not None:
             return AdscPeriodicContractRequestMessage.from_packet(from_name, to_name, packet)
-        elif re.match(r'REPORT.*', packet) is not None:
+        elif re.match(r'^REPORT\s.*$', packet) is not None:
             return AdscPeriodicReportMessage.from_packet(from_name, to_name, packet)
         else:
             raise ValueError('Unknown ADS-C message format')

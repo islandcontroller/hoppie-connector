@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import AdscPeriodicContractRequestMessage, AdscContractRequestMessage as Super
+from hoppie_connector.Messages import AdscPeriodicContractRequestMessage, AdscMessage, AdscMessage as Super
 import unittest
 
 class TestAdscPeriodicContractRequestMessage(unittest.TestCase):
@@ -8,11 +8,17 @@ class TestAdscPeriodicContractRequestMessage(unittest.TestCase):
         super().setUp()
         self._UUT = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', self._EXPECTED_INTERVAL)
 
+    def test_get_adsc_msg_type(self):
+        self.assertEqual(AdscMessage.AdscMessageType.REQUEST_PERIODIC, self._UUT.get_adsc_msg_type())
+
     def test_get_interval(self):
         self.assertEqual(self._EXPECTED_INTERVAL, self._UUT.get_interval())
 
     def test_not_demand_contract_request(self):
         self.assertFalse(self._UUT.is_demand_contract_request())
+
+    def test_get_packet_content(self):
+        self.assertEqual('REQUEST PERIODIC 120', self._UUT.get_packet_content())
 
     def test_hierarchy_super(self):
         self.assertIsInstance(self._UUT, Super)

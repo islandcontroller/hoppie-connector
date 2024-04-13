@@ -1,10 +1,9 @@
-from hoppie_connector.Messages import AdscPeriodicReportMessage, HoppieMessage, HoppieMessage as Super
+from hoppie_connector.Messages import AdscPeriodicReportMessage, AdscMessage, AdscMessage as Super
 from hoppie_connector.ADSC import AdscData, BasicGroup, FlightIdentGroup, EarthRefGroup, MeteoGroup
 import datetime
 import unittest
 
 class TestAdscPeriodicReportMessage(unittest.TestCase):
-    _EXPECTED_TYPE: HoppieMessage.MessageType = HoppieMessage.MessageType.ADS_C
     _EXPECTED_DATA: AdscData = AdscData(
         basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
         flight_ident=FlightIdentGroup('CALLSIGN')
@@ -15,8 +14,14 @@ class TestAdscPeriodicReportMessage(unittest.TestCase):
         super().setUp()
         self._UUT = AdscPeriodicReportMessage('CALLSIGN', 'OPS', self._EXPECTED_DATA)
 
+    def test_get_adsc_msg_type(self):
+        self.assertEqual(AdscMessage.AdscMessageType.REPORT_PERIODIC, self._UUT.get_adsc_msg_type())
+
     def test_get_data(self):
         self.assertEqual(self._EXPECTED_DATA, self._UUT.get_data())
+
+    def test_get_packet_content(self):
+        self.assertEqual(self._EXPECTED_PACKET, self._UUT.get_packet_content())
 
     def test_hierarchy_super(self):
         self.assertIsInstance(self._UUT, Super)
