@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import PeekSuccessResponse, HoppieResponse
+from hoppie_connector.Responses import PeekSuccessResponse, HoppieResponse, SuccessResponse as Super
 import unittest
 
 class TestPeekSuccessResponse(unittest.TestCase):
@@ -21,3 +21,6 @@ class TestPeekSuccessResponse(unittest.TestCase):
         expected = PeekSuccessResponse([])
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(PeekSuccessResponse([]), Super)

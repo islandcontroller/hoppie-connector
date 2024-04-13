@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import PingSuccessResponse, HoppieResponse
+from hoppie_connector.Responses import PingSuccessResponse, HoppieResponse, SuccessResponse as Super
 import unittest
 
 class TestPingSuccessResponse(unittest.TestCase):
@@ -41,3 +41,6 @@ class TestPingSuccessResponse(unittest.TestCase):
         expected = PingSuccessResponse(['TEST1', 'TEST2'])
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(PingSuccessResponse([]), Super)

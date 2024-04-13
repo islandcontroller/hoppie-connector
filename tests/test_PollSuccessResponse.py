@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import PollSuccessResponse, HoppieResponse
+from hoppie_connector.Responses import PollSuccessResponse, HoppieResponse, SuccessResponse as Super
 import unittest
 
 class TestPollSuccessResponse(unittest.TestCase):
@@ -21,3 +21,6 @@ class TestPollSuccessResponse(unittest.TestCase):
         expected = PollSuccessResponse([])
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(PollSuccessResponse([]), Super)

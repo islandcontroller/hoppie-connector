@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import ErrorResponse, HoppieResponse
+from hoppie_connector.Responses import ErrorResponse, HoppieResponse, HoppieResponse as Super
 import unittest
 
 class TestErrorResponse(unittest.TestCase):
@@ -36,3 +36,6 @@ class TestErrorResponse(unittest.TestCase):
         expected = ErrorResponse('reason')
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(ErrorResponse(''), Super)

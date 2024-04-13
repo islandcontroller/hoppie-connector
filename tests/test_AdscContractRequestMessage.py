@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import HoppieMessage, AdscContractRequestMessage
+from hoppie_connector.Messages import AdscContractRequestMessage, HoppieMessage, HoppieMessage as Super
 import unittest
 
 class TestAdscContractRequestMessage(unittest.TestCase):
@@ -14,6 +14,9 @@ class TestAdscContractRequestMessage(unittest.TestCase):
 
     def test_get_contract_type(self):
         self.assertEqual(self._EXPECTED_CONTRACT, self._UUT.get_contract_type())
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(self._UUT, Super)
 
 class TestAdscContractRequestMessageRepresentation(unittest.TestCase):
     def test_repr(self):

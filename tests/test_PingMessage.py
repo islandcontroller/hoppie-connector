@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import HoppieMessage, PingMessage
+from hoppie_connector.Messages import PingMessage, HoppieMessage, HoppieMessage as Super
 import unittest
 
 class TestValidPingMessage(unittest.TestCase):
@@ -15,6 +15,7 @@ class TestValidPingMessage(unittest.TestCase):
     def test_get_msg_type(self):       self.assertEqual(self._EXPECTED_TYPE,     self._UUT.get_msg_type())
     def test_get_stations(self):       self.assertEqual(self._EXPECTED_STATIONS, self._UUT.get_stations())
     def test_get_packet_content(self): self.assertEqual(self._EXPECTED_PACKET,   self._UUT.get_packet_content())
+    def test_hierarchy_super(self):    self.assertIsInstance(self._UUT, Super)
 
 class TestPingMessageInputValidation(unittest.TestCase):
     def test_invalid_station(self):         self.assertRaises(ValueError, lambda: PingMessage('STATION', '123456789'))

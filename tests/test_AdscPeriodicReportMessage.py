@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import HoppieMessage, AdscPeriodicReportMessage
+from hoppie_connector.Messages import AdscPeriodicReportMessage, HoppieMessage, HoppieMessage as Super
 from hoppie_connector.ADSC import AdscData, BasicGroup, FlightIdentGroup, EarthRefGroup, MeteoGroup
 import datetime
 import unittest
@@ -17,6 +17,9 @@ class TestAdscPeriodicReportMessage(unittest.TestCase):
 
     def test_get_data(self):
         self.assertEqual(self._EXPECTED_DATA, self._UUT.get_data())
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(self._UUT, Super)
 
 class TestAdscMessageFromPacket(unittest.TestCase):
     def test_basic_ident(self):

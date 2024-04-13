@@ -1,4 +1,4 @@
-from hoppie_connector.Responses import SuccessResponse, HoppieResponse
+from hoppie_connector.Responses import SuccessResponse, HoppieResponse, HoppieResponse as Super
 import unittest
 
 class TestSuccessResponse(unittest.TestCase):
@@ -21,3 +21,6 @@ class TestSuccessResponse(unittest.TestCase):
         expected = SuccessResponse()
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(SuccessResponse(), Super)

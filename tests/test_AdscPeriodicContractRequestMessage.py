@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import AdscPeriodicContractRequestMessage
+from hoppie_connector.Messages import AdscPeriodicContractRequestMessage, AdscContractRequestMessage as Super
 import unittest
 
 class TestAdscPeriodicContractRequestMessage(unittest.TestCase):
@@ -13,6 +13,9 @@ class TestAdscPeriodicContractRequestMessage(unittest.TestCase):
 
     def test_not_demand_contract_request(self):
         self.assertFalse(self._UUT.is_demand_contract_request())
+
+    def test_hierarchy_super(self):
+        self.assertIsInstance(self._UUT, Super)
 
 class TestAdscPeriodicContractRequestMessageDemandRequest(unittest.TestCase):
     def setUp(self) -> None:

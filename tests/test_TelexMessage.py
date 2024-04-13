@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import HoppieMessage, TelexMessage
+from hoppie_connector.Messages import TelexMessage, HoppieMessage, HoppieMessage as Super
 import unittest
 
 class TestValidTelexMessage(unittest.TestCase):
@@ -13,6 +13,7 @@ class TestValidTelexMessage(unittest.TestCase):
     def test_get_msg_type(self):       self.assertEqual(self._EXPECTED_TYPE,    self._UUT.get_msg_type())
     def test_get_message(self):        self.assertEqual(self._EXPECTED_MESSAGE, self._UUT.get_message())
     def test_get_packet_content(self): self.assertEqual(self._EXPECTED_PACKET,  self._UUT.get_packet_content())
+    def test_hierarchy_super(self):    self.assertIsInstance(self._UUT, Super)
 
 class TestTelexMessageInputValidation(unittest.TestCase):
     def test_message_too_long(self):     self.assertRaises(ValueError, lambda: TelexMessage('CALLSIGN', 'OPS', 221 * 'a'))

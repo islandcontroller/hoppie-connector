@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import HoppieMessage, ProgressMessage
+from hoppie_connector.Messages import ProgressMessage, HoppieMessage, HoppieMessage as Super
 from datetime import datetime, time, timedelta, timezone, UTC
 import unittest
 
@@ -22,6 +22,7 @@ class TestValidProgressMessage(unittest.TestCase):
     def test_get_time_in(self):        self.assertIsNone(self._UUT.get_time_in())
     def test_get_eta(self):            self.assertIsNone(self._UUT.get_eta())
     def test_get_packet_content(self): self.assertEqual(self._EXPECTED_PACKET, self._UUT.get_packet_content())
+    def test_hierarchy_super(self):    self.assertIsInstance(self._UUT, Super)
 
 class TestValidProgressMessageTimezone(unittest.TestCase):
     _TIMEZONE = timezone = timezone(timedelta(hours=1))
