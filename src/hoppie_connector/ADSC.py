@@ -17,6 +17,14 @@ class BasicGroup:
     position: tuple[float, float]
     altitude: float
 
+    def __eq__(self, value: object) -> bool:
+        return isinstance(value, BasicGroup) and \
+            (value.altitude == self.altitude) and \
+            (value.position == self.position) and \
+            (value.timestamp.day == self.timestamp.day) and \
+            (value.timestamp.hour == self.timestamp.hour) and \
+            (value.timestamp.minute == self.timestamp.minute)
+
 @dataclass
 class FlightIdentGroup:
     """FlightIdentGroup(acft_ident)
