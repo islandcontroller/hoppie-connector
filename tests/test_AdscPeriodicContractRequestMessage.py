@@ -40,3 +40,19 @@ class TestAdscPeriodicContractRequestMessageFromPacket(unittest.TestCase):
 
     def test_invalid_format(self):
         self.assertRaises(ValueError, lambda: AdscPeriodicContractRequestMessage.from_packet('ATC', 'CALLSIGN', 'REQUEST PERIODIC'))
+
+class TestAdscPeriodicContractRequestMessageComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', 120)
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_content(self):
+        value1 = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', 120)
+        value2 = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', 120)
+        self.assertEqual(value1, value2)
+
+    def test_differing(self):
+        value1 = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', 120)
+        value2 = AdscPeriodicContractRequestMessage('ATC', 'CALLSIGN', 90)
+        self.assertNotEqual(value1, value2)

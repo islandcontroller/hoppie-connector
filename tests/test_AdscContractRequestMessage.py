@@ -20,3 +20,14 @@ class TestAdscContractRequestMessageRepresentation(unittest.TestCase):
         expected = AdscContractRequestMessage('ATC', 'CALLSIGN', AdscContractRequestMessage.ContractType.PERIODIC)
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+class TestAdscContractRequestMessageComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = AdscContractRequestMessage('ATC', 'CALLSIGN', AdscContractRequestMessage.ContractType.PERIODIC)
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_content(self):
+        value1 = AdscContractRequestMessage('ATC', 'CALLSIGN', AdscContractRequestMessage.ContractType.PERIODIC)
+        value2 = AdscContractRequestMessage('ATC', 'CALLSIGN', AdscContractRequestMessage.ContractType.PERIODIC)
+        self.assertEqual(value1, value2)

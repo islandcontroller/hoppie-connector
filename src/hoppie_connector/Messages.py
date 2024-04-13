@@ -354,6 +354,9 @@ class AdscContractRequestMessage(HoppieMessage):
     def __repr__(self) -> str:
         return f"AdscContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, contract_type={self.get_contract_type()!r})"
 
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value) and isinstance(__value, AdscContractRequestMessage) and (__value.get_contract_type() == self.get_contract_type())
+
 class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
     """AdscPeriodicContractRequestMessage(from_name, to_name, interval)
 
@@ -414,6 +417,9 @@ class AdscPeriodicContractRequestMessage(AdscContractRequestMessage):
 
     def __repr__(self) -> str:
         return f"AdscPeriodicContractRequestMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, interval={self.get_interval()!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value) and isinstance(__value, AdscPeriodicContractRequestMessage) and (__value.get_interval() == self.get_interval())
 
 class AdscPeriodicReportMessage(HoppieMessage):
     """AdscPeriodicReportMessage(from_name, to_name, data)
@@ -508,6 +514,9 @@ class AdscPeriodicReportMessage(HoppieMessage):
 
     def __repr__(self) -> str:
         return f"AdscPeriodicReportMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, data={self.get_data()!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value) and isinstance(__value, AdscPeriodicReportMessage) and (__value.get_data() == self.get_data())
 
 class PingMessage(HoppieMessage):
     """PingMessage([stations])

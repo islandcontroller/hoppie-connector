@@ -68,3 +68,35 @@ class TestAdscPeriodicReportMessageRepresentation(unittest.TestCase):
         ))
         actual = eval(repr(expected))
         self.assertEqual(expected, actual)
+
+class TestAdscPeriodicReportMessageComparison(unittest.TestCase):
+    def test_same(self):
+        value1 = AdscPeriodicReportMessage('CALLSIGN', 'OPS', AdscData(
+            basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
+            flight_ident=FlightIdentGroup('CALLSIGN')
+        ))
+        value2 = value1
+        self.assertEqual(value1, value2)
+
+    def test_equal_content(self):
+        value1 = AdscPeriodicReportMessage('CALLSIGN', 'OPS', AdscData(
+            basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
+            flight_ident=FlightIdentGroup('CALLSIGN')
+        ))
+        value2 = AdscPeriodicReportMessage('CALLSIGN', 'OPS', AdscData(
+            basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
+            flight_ident=FlightIdentGroup('CALLSIGN')
+        ))
+        self.assertEqual(value1, value2)
+
+    def test_differing_data(self):
+        value1 = AdscPeriodicReportMessage('CALLSIGN', 'OPS', AdscData(
+            basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
+            flight_ident=FlightIdentGroup('CALLSIGN')
+        ))
+        value2 = AdscPeriodicReportMessage('CALLSIGN', 'OPS', AdscData(
+            basic=BasicGroup(datetime.datetime(2000, 1, 1, 18, 20, tzinfo=datetime.UTC), (-10.0, 10.0), 3000),
+            flight_ident=FlightIdentGroup('CALLSIGN'),
+            meteo=MeteoGroup((120, 10), -5)
+        ))
+        self.assertNotEqual(value1, value2)
