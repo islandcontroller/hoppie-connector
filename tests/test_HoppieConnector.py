@@ -1,6 +1,7 @@
 from hoppie_connector import HoppieConnector, HoppieError, HoppieWarning
 from hoppie_connector.Messages import TelexMessage
 from hoppie_connector.Responses import PingSuccessResponse
+from hoppie_connector.ADSC import AdscData, BasicGroup, FlightIdentGroup
 from responses import matchers
 from datetime import timedelta, time, datetime
 import responses
@@ -62,6 +63,31 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
         ])
 
         actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_progress('OPS', 'AAAA', 'BBBB', time(hour=18, minute=20))
+        self.assertGreater(actual, timedelta(0))
+
+    @responses.activate
+    def test_send_adsc_periodic_request(self):
+        responses.get(self._URL, body='ok', match=[
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'CALLSIGN', 'type': 'ads-c', 'packet': 'REQUEST PERIODIC 120'})
+        ])
+
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_adsc_periodic_request('CALLSIGN', 120)
+        self.assertGreater(actual, timedelta(0))
+
+    @responses.activate
+    def test_send_adsc_periodic_report(self):
+        responses.get(self._URL, body='ok', match=[
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'CALLSIGN', 'type': 'ads-c', 'packet': 'REPORT IDENT 011820 10.00000 20.00000 3000'})
+        ])
+
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_adsc_periodic_report('CALLSIGN', data=AdscData(
+            basic=BasicGroup(
+                timestamp=datetime(year=2000, month=1, day=1, hour=18, minute=20),
+                position=(10.0, 20.0),
+                altitude=3000.0
+            ),
+            flight_ident=FlightIdentGroup('IDENT')
+        ))
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
