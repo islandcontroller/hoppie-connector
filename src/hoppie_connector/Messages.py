@@ -331,6 +331,7 @@ class AdscMessage(HoppieMessage):
     
     class AdscMessageType(enum.StrEnum):
         REQUEST_PERIODIC = 'REQUEST PERIODIC'
+        CANCEL_PERIODIC = 'REPORT CANCEL'
         REPORT_PERIODIC = 'REPORT'
 
         def __repr__(self) -> str:
@@ -527,6 +528,37 @@ class AdscPeriodicReportMessage(AdscMessage):
     def __eq__(self, __value: object) -> bool:
         return super().__eq__(__value) and isinstance(__value, AdscPeriodicReportMessage) and (__value.get_data() == self.get_data())
 
+class AdscPeriodicContractCancellationMessage(AdscMessage):
+    """AdscPeriodicContractCancellationMessage(from_name, to_name)
+    
+    ADS-C Periodic Report Cancellation message.
+    """
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str) -> Self:
+        """Create new cancellation message from packet
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Reqipient station name
+        """
+        return AdscPeriodicContractCancellationMessage(from_name, to_name)
+
+    def __init__(self, from_name: str, to_name: str):
+        """Create new cancellation message
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+        """
+        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.CANCEL_PERIODIC)
+
+    def __repr__(self) -> str:
+        return f"AdscPeriodicContractCancellationMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value) and isinstance(__value, AdscPeriodicContractCancellationMessage)
+
 class PingMessage(HoppieMessage):
     """PingMessage([stations])
 
@@ -591,8 +623,10 @@ class AdscMessageParser(object):
         Returns:
             HoppieMessage: Parsed message object
         """
-        if re.match(r'^REQUEST\sPERIODIC\s\d+$', packet) is not None:
+        if re.match(r'^REQUEST\sPERIODIC\s.*$', packet) is not None:
             return AdscPeriodicContractRequestMessage.from_packet(from_name, to_name, packet)
+        elif re.match(r'REPORT\sCANCEL', packet) is not None:
+            return AdscPeriodicContractCancellationMessage.from_packet(from_name, to_name)
         elif re.match(r'^REPORT\s.*$', packet) is not None:
             return AdscPeriodicReportMessage.from_packet(from_name, to_name, packet)
         else:
