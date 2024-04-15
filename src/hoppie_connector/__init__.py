@@ -1,4 +1,4 @@
-from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscPeriodicContractCancellationMessage, AdscPeriodicReportMessage, HoppieMessageParser
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscPeriodicReportMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .ADSC import AdscData
 from .API import HoppieAPI
@@ -159,8 +159,11 @@ class HoppieConnector(object):
         """
         return self._connect(AdscPeriodicReportMessage(self._station, to_name, data), SuccessResponse)[1]
 
-    def send_adsc_periodic_cancel(self, to_name: str) -> timedelta:
-        """Send an ADS-C Periodic Contract cancellation message to recipient station
+    def send_adsc_cancel(self, to_name: str) -> timedelta:
+        """Send an ADS-C Surveillance Contract cancellation message to recipient station
+
+        Note:
+            This message is sent by the ground station in order to cancel an existing ADS-C Periodic or Event contract.
 
         Args:
             to_name (str): Recipient station name
@@ -168,4 +171,4 @@ class HoppieConnector(object):
         Returns:
             timedelta: Response delay
         """
-        return self._connect(AdscPeriodicContractCancellationMessage(self._station, to_name), SuccessResponse)[1]
+        return self._connect(AdscContractCancellationMessage(self._station, to_name), SuccessResponse)[1]

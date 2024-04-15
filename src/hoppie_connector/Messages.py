@@ -331,7 +331,7 @@ class AdscMessage(HoppieMessage):
     
     class AdscMessageType(enum.StrEnum):
         REQUEST_PERIODIC = 'REQUEST PERIODIC'
-        CANCEL_PERIODIC = 'REPORT CANCEL'
+        REQUEST_CANCEL = 'REQUEST CANCEL'
         REPORT_PERIODIC = 'REPORT'
 
         def __repr__(self) -> str:
@@ -382,7 +382,7 @@ class AdscPeriodicContractRequestMessage(AdscMessage):
             to_name (str): Recipient station name
             packet (str): Packet string
         """
-        m = re.match(r'REQUEST\sPERIODIC\s(\d+)', packet)
+        m = re.match(AdscMessage.AdscMessageType.REQUEST_PERIODIC + r'\s(\d+)', packet)
         if not m:
             raise ValueError('Invalid ADS-C contract request format')
         
@@ -446,7 +446,7 @@ class AdscPeriodicReportMessage(AdscMessage):
             to_name (str): Recipipent station name
             packet (str): Packet string
         """
-        m = re.match(r'REPORT\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,5})' + \
+        m = re.match(AdscMessage.AdscMessageType.REPORT_PERIODIC + r'\s(' + STATION_NAME_REGEX + r')\s(\d{6})\s(\-?\d{1,2}\.\d{4,6})\s(\-?\d{1,3}\.\d{3,6})\s(\d{1,5})' + \
                      r'(?:\s(\d{3})\s(\d{1,3})' + \
                         r'(?:\s(\d{3})\/(\d{1,3})\s(\-?\d{1,3})' + \
                             r'(?:\s(DES|LVL|CLB))?' + \
@@ -528,10 +528,10 @@ class AdscPeriodicReportMessage(AdscMessage):
     def __eq__(self, __value: object) -> bool:
         return super().__eq__(__value) and isinstance(__value, AdscPeriodicReportMessage) and (__value.get_data() == self.get_data())
 
-class AdscPeriodicContractCancellationMessage(AdscMessage):
-    """AdscPeriodicContractCancellationMessage(from_name, to_name)
+class AdscContractCancellationMessage(AdscMessage):
+    """AdscContractCancellationMessage(from_name, to_name)
     
-    ADS-C Periodic Report Cancellation message.
+    ADS-C Surveillance Contract Cancellation message.
     """
 
     @classmethod
@@ -542,7 +542,7 @@ class AdscPeriodicContractCancellationMessage(AdscMessage):
             from_name (str): Sender station name
             to_name (str): Reqipient station name
         """
-        return AdscPeriodicContractCancellationMessage(from_name, to_name)
+        return AdscContractCancellationMessage(from_name, to_name)
 
     def __init__(self, from_name: str, to_name: str):
         """Create new cancellation message
@@ -551,13 +551,13 @@ class AdscPeriodicContractCancellationMessage(AdscMessage):
             from_name (str): Sender station name
             to_name (str): Recipient station name
         """
-        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.CANCEL_PERIODIC)
+        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.REQUEST_CANCEL)
 
     def __repr__(self) -> str:
-        return f"AdscPeriodicContractCancellationMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r})"
+        return f"AdscContractCancellationMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r})"
 
     def __eq__(self, __value: object) -> bool:
-        return super().__eq__(__value) and isinstance(__value, AdscPeriodicContractCancellationMessage)
+        return super().__eq__(__value) and isinstance(__value, AdscContractCancellationMessage)
 
 class PingMessage(HoppieMessage):
     """PingMessage([stations])
@@ -609,25 +609,25 @@ class AdscMessageParser(object):
     Pre-processing parser for received ADS-C data.
     """
     @classmethod
-    def from_packet(cls, from_name, to_name, packet) -> HoppieMessage:
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> HoppieMessage:
         """Parse ADS-C message from data
 
         Note:
             Delegates parsing to specific message class.
 
         Args:
-            from_name (_type_): Sender station name
-            to_name (_type_): Recipient station name
-            packet (_type_): Packet string
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            packet (str): Packet string
 
         Returns:
             HoppieMessage: Parsed message object
         """
-        if re.match(r'^REQUEST\sPERIODIC\s.*$', packet) is not None:
+        if packet.startswith(AdscMessage.AdscMessageType.REQUEST_PERIODIC):
             return AdscPeriodicContractRequestMessage.from_packet(from_name, to_name, packet)
-        elif re.match(r'REPORT\sCANCEL', packet) is not None:
-            return AdscPeriodicContractCancellationMessage.from_packet(from_name, to_name)
-        elif re.match(r'^REPORT\s.*$', packet) is not None:
+        elif packet.startswith(AdscMessage.AdscMessageType.REQUEST_CANCEL):
+            return AdscContractCancellationMessage.from_packet(from_name, to_name)
+        elif packet.startswith(AdscMessage.AdscMessageType.REPORT_PERIODIC):
             return AdscPeriodicReportMessage.from_packet(from_name, to_name, packet)
         else:
             raise ValueError('Unknown ADS-C message format')

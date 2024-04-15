@@ -91,12 +91,12 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
-    def test_send_adsc_periodic_cancel(self):
+    def test_send_adsc_cancel(self):
         responses.get(self._URL, body='ok', match=[
-            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'ATC', 'type': 'ads-c', 'packet': 'REPORT CANCEL'})
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'ATC', 'type': 'ads-c', 'packet': 'REQUEST CANCEL'})
         ])
 
-        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_adsc_periodic_cancel('ATC')
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_adsc_cancel('ATC')
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
