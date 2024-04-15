@@ -333,6 +333,7 @@ class AdscMessage(HoppieMessage):
         REQUEST_PERIODIC = 'REQUEST PERIODIC'
         REQUEST_CANCEL = 'REQUEST CANCEL'
         REPORT_PERIODIC = 'REPORT'
+        REJECT = 'REJECT'
 
         def __repr__(self) -> str:
             return f"AdscMessage.AdscMessageType({self.value!r})"
@@ -559,6 +560,38 @@ class AdscContractCancellationMessage(AdscMessage):
     def __eq__(self, __value: object) -> bool:
         return super().__eq__(__value) and isinstance(__value, AdscContractCancellationMessage)
 
+class AdscContractRejectionMessage(AdscMessage):
+    """AdscContractRejectionMessage(from_name, to_name)
+    
+    ADS-C Surveillance Contract Rejection message.
+    """
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str) -> Self:
+        """Create new rejection message from packet
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+        """
+        return AdscContractRejectionMessage(from_name, to_name)
+
+    def __init__(self, from_name: str, to_name: str):
+        """Create new rejection message
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+        """
+        super().__init__(from_name, to_name, AdscMessage.AdscMessageType.REJECT)
+
+    def __repr__(self) -> str:
+        return f"AdscContractRejectionMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r})"
+
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value) and isinstance(__value, AdscContractRejectionMessage)
+
+
 class PingMessage(HoppieMessage):
     """PingMessage([stations])
 
@@ -629,6 +662,8 @@ class AdscMessageParser(object):
             return AdscContractCancellationMessage.from_packet(from_name, to_name)
         elif packet.startswith(AdscMessage.AdscMessageType.REPORT_PERIODIC):
             return AdscPeriodicReportMessage.from_packet(from_name, to_name, packet)
+        elif packet.startswith(AdscMessage.AdscMessageType.REJECT):
+            return AdscContractRejectionMessage.from_packet(from_name, to_name)
         else:
             raise ValueError('Unknown ADS-C message format')
 

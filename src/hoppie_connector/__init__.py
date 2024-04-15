@@ -1,4 +1,4 @@
-from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscPeriodicReportMessage, HoppieMessageParser
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscContractRejectionMessage, AdscPeriodicReportMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .ADSC import AdscData
 from .API import HoppieAPI
@@ -172,3 +172,17 @@ class HoppieConnector(object):
             timedelta: Response delay
         """
         return self._connect(AdscContractCancellationMessage(self._station, to_name), SuccessResponse)[1]
+
+    def send_adsc_reject(self, to_name: str) -> timedelta:
+        """Send an ADS-C Surveillance Contract rejection message to recipient station
+
+        Note:
+            This message is sent by the airborne station in order to reject an incoming ADS-C Surveillance Contract request.
+
+        Args:
+            to_name (str): Recipient station name
+
+        Returns:
+            timedelta: Response delay
+        """
+        return self._connect(AdscContractRejectionMessage(self._station, to_name), SuccessResponse)[1]

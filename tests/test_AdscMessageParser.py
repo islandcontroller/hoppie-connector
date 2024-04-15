@@ -1,4 +1,4 @@
-from hoppie_connector.Messages import AdscMessageParser, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscPeriodicReportMessage
+from hoppie_connector.Messages import AdscMessageParser, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscContractRejectionMessage, AdscPeriodicReportMessage
 import unittest
 
 class TestAdscMessageParser(unittest.TestCase):
@@ -15,5 +15,8 @@ class TestAdscMessageParser(unittest.TestCase):
     def test_contract_cancellation(self):
         self.assertIsInstance(self._UUT.from_packet('CALLSIGN', 'ATC', 'REQUEST CANCEL'), AdscContractCancellationMessage)
 
+    def test_contract_rejection(self):
+        self.assertIsInstance(self._UUT.from_packet('CALLSIGN', 'ATC', 'REJECT'), AdscContractRejectionMessage)
+
     def test_unknown_format(self):
-        self.assertRaises(ValueError, lambda: self._UUT.from_packet('ATC', 'CALLSIGN', 'REQUEST EVENT'))
+        self.assertRaises(ValueError, lambda: self._UUT.from_packet('ATC', 'CALLSIGN', 'UNKNOWN'))
