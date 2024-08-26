@@ -2,6 +2,7 @@ from hoppie_connector import HoppieConnector, HoppieError, HoppieWarning
 from hoppie_connector.Messages import TelexMessage
 from hoppie_connector.Responses import PingSuccessResponse
 from hoppie_connector.ADSC import AdscData, BasicGroup, FlightIdentGroup
+from hoppie_connector.CPDLC import CpdlcResponseRequirement
 from responses import matchers
 from datetime import timedelta, time, datetime
 import responses
@@ -106,6 +107,15 @@ class TestHoppieConnectorSuccess(unittest.TestCase):
         ])
 
         actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_adsc_reject('ATC')
+        self.assertGreater(actual, timedelta(0))
+
+    @responses.activate
+    def tests_send_cpdlc(self):
+        responses.get(self._URL, body='ok', match=[
+            matchers.query_param_matcher({'logon': self._LOGON, 'from': self._STATION, 'to': 'ATSU', 'type': 'cpdlc', 'packet': '/data2/1//N/TEST'})
+        ])
+        
+        actual = HoppieConnector(self._STATION, self._LOGON, self._URL).send_cpdlc('ATSU', 1, CpdlcResponseRequirement.N, 'TEST')
         self.assertGreater(actual, timedelta(0))
 
     @responses.activate
