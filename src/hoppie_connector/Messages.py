@@ -1,4 +1,5 @@
 from .ADSC import AdscData, BasicGroup, FlightIdentGroup, EarthRefGroup, MeteoGroup
+from .CPDLC import CpdlcResponseRequirement
 from .Utilities import is_valid_station_name, is_valid_airport_code, get_fixed_width_float_str, ICAO_AIRPORT_REGEX, STATION_NAME_REGEX
 from datetime import datetime, time, UTC
 from typing import Self
@@ -17,6 +18,7 @@ class HoppieMessage(object):
         POLL = 'poll'
         PEEK = 'peek'
         PING = 'ping'
+        CPDLC = 'cpdlc'
 
         def __repr__(self) -> str:
             return f"HoppieMessage.MessageType.{self.name}"
@@ -591,6 +593,87 @@ class AdscContractRejectionMessage(AdscMessage):
     def __eq__(self, __value: object) -> bool:
         return super().__eq__(__value) and isinstance(__value, AdscContractRejectionMessage)
 
+class CpdlcMessage(HoppieMessage):
+    """CpdlcMessage(from_name, to_name, min, rr, message[, mrn])
+
+    CPDLC message
+    """
+    _EXCHG_FORMAT_PREFIX: str = 'data2'
+    _MSG_CHARS: re.Pattern = r'[A-Z0-9\.\_\@ ]'
+
+    @classmethod
+    def from_packet(cls, from_name: str, to_name: str, packet: str) -> Self:
+        """Parse CPDLC message from packet string
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            packet (str): Packet string
+        """
+        m = re.match(r'^/' + cls._EXCHG_FORMAT_PREFIX + r'/(\d+)/(\d*)/(WU|AN|R|NE|N|Y)/(' + cls._MSG_CHARS + r'*)$', packet)
+        if not m:
+            raise ValueError('Invalid CPDLC message format')
+        
+        min = int(m.group(1), base=10)
+        mrn = int(m.group(2), base=10) if m.group(2) != '' else None
+        rr = m.group(3)
+        message = m.group(4)
+
+        return CpdlcMessage(from_name, to_name, min, rr, message, mrn)
+
+    def __init__(self, from_name: str, to_name: str, min: int, rr: CpdlcResponseRequirement, message: str, mrn: int | None = None):
+        """Create a CPDLC message
+
+        Args:
+            from_name (str): Sender station name
+            to_name (str): Recipient station name
+            min (int): Message Identification Number (MIN)
+            rr (ResponseRequirement): Response Requirement
+            message (str): Message element
+            mrn (int, optional): Message Reference Number. Defaults to None.
+        """
+        if min is None or min < 0:
+            raise ValueError('Invalid MIN')
+        elif mrn is not None and mrn < 0:
+            raise ValueError('Invalid MRN')
+        elif not re.match(r'^' + self._MSG_CHARS + r'+$', message):
+            raise ValueError('Message contains invalid characters')
+        else:
+            super().__init__(from_name, to_name, self.MessageType.CPDLC)
+            self._min = min
+            self._rr = CpdlcResponseRequirement(rr)
+            self._message = message
+            self._mrn = mrn
+
+    def get_min(self) -> int:
+        """Return Message Identification Number (MIN)
+        """
+        return self._min
+
+    def get_rr(self) -> CpdlcResponseRequirement:
+        """Return Response Requirement
+        """
+        return self._rr
+
+    def get_message(self) -> str:
+        """Return message element
+        """
+        return self._message
+
+    def get_mrn(self) -> int | None:
+        """Return Message Reference Number (MRN)
+        """
+        return self._mrn
+
+    def get_packet_content(self) -> str:
+        return f"/{self._EXCHG_FORMAT_PREFIX}" \
+               f"/{self._min}" \
+               f"/{self._mrn if self._mrn is not None else ''}" \
+               f"/{self._rr.value}" \
+               f"/{self._message}"
+
+    def __repr__(self) -> str:
+        return f"CpdlcMessage(from_name={self.get_from_name()!r}, to_name={self.get_to_name()!r}, min={self.get_min()!r}, rr={self.get_rr()!r}, message={self.get_message()!r}, mrn={self.get_mrn()!r})"
 
 class PingMessage(HoppieMessage):
     """PingMessage([stations])
@@ -693,6 +776,8 @@ class HoppieMessageParser(object):
         match HoppieMessage.MessageType(type_name):
             case HoppieMessage.MessageType.TELEX:
                 return TelexMessage.from_packet(from_name, self._station, packet)
+            case HoppieMessage.MessageType.CPDLC:
+                return CpdlcMessage.from_packet(from_name, self._station, packet)
             case HoppieMessage.MessageType.PROGRESS:
                 return ProgressMessage.from_packet(from_name, self._station, packet)
             case HoppieMessage.MessageType.ADS_C:
