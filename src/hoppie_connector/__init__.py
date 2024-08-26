@@ -203,6 +203,6 @@ class HoppieConnector(object):
             mrn (int | None, optional): Message Reference Number. Defaults to None.
 
         Returns:
-            timedelta: _description_
+            timedelta: Response delay
         """
         return self._connect(CpdlcMessage(self._station, to_name, min, rr, message, mrn), SuccessResponse)[1]
