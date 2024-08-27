@@ -1,6 +1,7 @@
-from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscContractRejectionMessage, AdscPeriodicReportMessage, HoppieMessageParser
+from .Messages import HoppieMessage, ProgressMessage, PeekMessage, PollMessage, PingMessage, TelexMessage, AdscPeriodicContractRequestMessage, AdscContractCancellationMessage, AdscContractRejectionMessage, AdscPeriodicReportMessage, CpdlcMessage, HoppieMessageParser
 from .Responses import ErrorResponse, SuccessResponse, PollSuccessResponse, PingSuccessResponse, PeekSuccessResponse
 from .ADSC import AdscData
+from .CPDLC import CpdlcResponseRequirement
 from .API import HoppieAPI
 from datetime import timedelta, time
 from typing import TypeVar
@@ -186,3 +187,22 @@ class HoppieConnector(object):
             timedelta: Response delay
         """
         return self._connect(AdscContractRejectionMessage(self._station, to_name), SuccessResponse)[1]
+
+    def send_cpdlc(self, to_name: str, min: int, rr: CpdlcResponseRequirement, message: str, mrn: int | None = None) -> timedelta:
+        """Send a CPDLC message to recipient station
+
+        Note:
+            Special restrictions regarding polling interval apply for airborne stations. See hoppie.nl docs.
+            See CPDLC docs for further information about how to populate the data fields below.
+
+        Args:
+            to_name (str): Recipient station name
+            min (int): Message Identification Number
+            rr (CpdlcResponseRequirement): Response Requirement
+            message (str): Message element
+            mrn (int | None, optional): Message Reference Number. Defaults to None.
+
+        Returns:
+            timedelta: Response delay
+        """
+        return self._connect(CpdlcMessage(self._station, to_name, min, rr, message, mrn), SuccessResponse)[1]
