@@ -36,7 +36,7 @@ dynamic = ["version"]
 Test = [
     "pytest>=8.1",
     "pytest-cov>=4.1",
-    "responses>=0.25",
+    "responses>=0.26.0",
     "ruff>=0.3"
 ]
 
