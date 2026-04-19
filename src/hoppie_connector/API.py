@@ -38,7 +38,10 @@ class HoppieAPI(object):
                 data = params.pop('packet')
                 response = requests.post(self._url, params={'logon': self._logon, **params}, data={'packet': data})
             case _:
-                response = requests.get(self._url, params={'logon': self._logon, **msg.get_msg_params()})
+                params = msg.get_msg_params()
+                if not params['packet']:
+                    del params['packet']
+                response = requests.get(self._url, params={'logon': self._logon, **params})
         
         if not response.ok: 
             raise ConnectionError(f"Error {response.status_code}: {response.reason}")
